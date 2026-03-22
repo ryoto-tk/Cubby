@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cubby">
+<meta name="theme-color" content="#ffffff">
+<title>Cubby — ルービックキューブAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --text: #1a1a1a;
+    --text-secondary: #6b6b6b;
+    --text-tertiary: #aaaaaa;
+    --bg: #f9f8f5;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 env(safe-area-inset-bottom, 20px);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    padding: 20px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .logo .accent { color: var(--green); }
+
+  .lang-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 20px;
+    padding: 3px;
+  }
+  .lang-btn {
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: none;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .lang-btn.active {
+    background: var(--green);
+    color: #fff;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 28px 20px 20px;
+  }
+  .hero-title {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .hero-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Steps */
+  .step-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+  .step-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-tertiary);
+    background: var(--surface);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .step-dot.active {
+    border-color: var(--green);
+    background: var(--green);
+    color: #fff;
+  }
+  .step-dot.done {
+    border-color: var(--green);
+    background: var(--green-light);
+    color: var(--green-dark);
+  }
+  .step-line {
+    height: 1px;
+    flex: 1;
+    background: var(--border-strong);
+    margin: 0 4px;
+  }
+  .step-line.done { background: var(--green); }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin: 0 16px 12px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Groq Setup */
+  .setup-steps {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .setup-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+  .setup-step:last-child { margin-bottom: 0; }
+  .setup-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .setup-link { color: var(--green); text-decoration: none; font-weight: 500; }
+
+  .api-input-row { display: flex; gap: 8px; }
+  .api-input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-input:focus { border-color: var(--green); }
+  .api-input.saved { border-color: var(--green); background: var(--green-light); }
+
+  .save-btn {
+    padding: 12px 16px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .save-btn:active { opacity: 0.8; }
+
+  .key-status {
+    margin-top: 8px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: none;
+  }
+  .key-status.ok { display: block; background: var(--green-light); color: var(--green-dark); }
+  .key-status.skip { display: block; background: #FFF8E1; color: #856404; }
+
+  /* Primary Button */
+  .btn-primary {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 10px;
+    padding: 16px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-secondary {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 10px;
+    padding: 14px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn-secondary:active { background: var(--bg); }
+
+  /* Camera */
+  .camera-wrap {
+    position: relative;
+    background: #111;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  video.active { display: block; }
+
+  .camera-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #888;
+  }
+  .camera-placeholder svg { opacity: 0.6; }
+  .cam-label { font-size: 14px; }
+  .cam-sub { font-size: 12px; color: #666; }
+
+  .scan-guide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    aspect-ratio: 1;
+    pointer-events: none;
+  }
+  .guide-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: #1D9E75;
+    border-style: solid;
+    opacity: 0.9;
+  }
+  .guide-corner.tl { top: 0; left: 0; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+  .guide-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+  .guide-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+  .guide-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+
+  .scan-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  /* Face tabs */
+  .face-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .face-tab {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 0.5px solid var(--border-strong);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .face-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
+  .face-tab.done { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+
+  /* Cube preview */
+  .cube-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 12px 0;
+  }
+  .cube-face-mini {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    width: 90px;
+  }
+  .face-cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    border: 0.5px solid rgba(0,0,0,0.12);
+  }
+
+  /* Color picker for manual input */
+  .color-picker {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+  .color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .color-swatch:active { transform: scale(0.9); }
+  .color-swatch.selected { border-color: var(--text); transform: scale(1.15); }
+
+  /* Badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .badge-green { background: var(--green-light); color: var(--green-dark); }
+  .badge-yellow { background: #FFF8E1; color: #856404; }
+  .badge-pulse { animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Chat */
+  .chat-bubble {
+    background: var(--bg);
+    border-radius: 4px 14px 14px 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-line;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+  .step-num-badge {
+    display: inline-block;
+    background: var(--green);
+    color: #fff;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+
+  /* Scan capture btn */
+  .capture-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--green);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 14px auto 0;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .capture-btn::after {
+    content: '';
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--green);
+    display: block;
+    transition: all 0.15s;
+  }
+  .capture-btn:active::after { width: 40px; height: 40px; }
+
+  /* Screen transitions */
+  .screen { display: none; animation: fadeIn 0.25s ease; }
+  .screen.active { display: block; }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .notice {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-align: center;
+    padding: 0 20px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  canvas { display: none; }
+
+  /* All faces grid for result */
+  .all-faces {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .face-block { text-align: center; }
+  .face-block-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-tertiary); margin-bottom: 4px; }
+  .face-block-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .face-block-cell { aspect-ratio: 1; border-radius: 3px; border: 0.5px solid rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">cub<span class="accent">by</span></div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('ja')">日本語</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+
+  <!-- Step Bar -->
+  <div class="step-bar" style="margin-top:16px;">
+    <div class="step-item">
+      <div class="step-dot active" id="sdot0">1</div>
+    </div>
+    <div class="step-line" id="sline0"></div>
+    <div class="step-item">
+      <div class="step-dot" id="sdot1">2</div>
+    </div>
+    <div class="step-line" id="sline1"></div>
+    <div class="step-item">
+      <div class="step-dot" id="sdot2">3</div>
+    </div>
+    <div class="step-line" id="sline2"></div>
+    <div class="step-item">
+      <div class="step-dot" id="sdot3">4</div>
+    </div>
+  </div>
+
+  <!-- Screen 0: Setup -->
+  <div class="screen active" id="screen-setup">
+    <div class="hero">
+      <div class="hero-title" id="hero-title">キューブを<br>解いてみよう。</div>
+      <div class="hero-sub" id="hero-sub">AIがステップごとに優しく教えます。まずGroq APIキーを設定してください（無料）。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="setup-card-title">API設定</div>
+      <div class="setup-steps">
+        <div class="setup-step">
+          <div class="setup-num">1</div>
+          <div id="step1-text"><a href="https://console.groq.com" target="_blank" class="setup-link">console.groq.com</a> でアカウント作成（無料）</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-num">2</div>
+          <div id="step2-text">API Keys → Create API Key をクリック</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-num">3</div>
+          <div id="step3-text">発行されたキーを下に貼り付けて保存</div>
+        </div>
+      </div>
+      <div class="api-input-row">
+        <input class="api-input" id="apikey-input" type="password" placeholder="gsk_..." autocomplete="off" />
+        <button class="save-btn" id="save-btn" onclick="saveApiKey()">保存</button>
+      </div>
+      <div class="key-status" id="key-status"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-start" onclick="goToScan()">カメラでスキャン開始</button>
+    <button class="btn-secondary" id="btn-demo" onclick="runDemo()">デモを見る（キーなし）</button>
+    <p class="notice" id="notice-text">APIキーはお使いのブラウザにのみ保存されます。外部に送信されることはありません。</p>
+  </div>
+
+  <!-- Screen 1: Scan -->
+  <div class="screen" id="screen-scan">
+    <div style="padding: 16px 20px 8px;">
+      <div class="hero-title" style="font-size:18px;" id="scan-title">面をスキャン</div>
+      <div class="hero-sub" id="scan-sub">6面すべてをスキャンしてください</div>
+    </div>
+
+    <div class="card">
+      <div class="face-tabs" id="face-tabs"></div>
+      <div class="camera-wrap" id="camera-wrap">
+        <video id="video" playsinline autoplay muted></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-placeholder" id="cam-placeholder">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="12" width="40" height="30" rx="6" stroke="#888" stroke-width="1.5"/>
+            <circle cx="24" cy="27" r="9" stroke="#888" stroke-width="1.5"/>
+            <circle cx="24" cy="27" r="4" fill="#888" opacity="0.4"/>
+            <rect x="16" y="8" width="10" height="6" rx="2" fill="#888" opacity="0.5"/>
+          </svg>
+          <div class="cam-label" id="cam-label-text">カメラを起動する</div>
+          <div class="cam-sub" id="cam-sub-text">タップしてください</div>
+        </div>
+        <div class="scan-guide" id="scan-guide" style="display:none;">
+          <div class="guide-corner tl"></div>
+          <div class="guide-corner tr"></div>
+          <div class="guide-corner bl"></div>
+          <div class="guide-corner br"></div>
+        </div>
+        <div class="scan-overlay" id="scan-overlay"></div>
+      </div>
+      <button class="capture-btn" id="capture-btn" onclick="captureFrame()" style="display:none;"></button>
+    </div>
+
+    <div class="card" id="manual-input-card" style="display:none;">
+      <div class="card-title" id="manual-title">手動で色を入力</div>
+      <div class="color-picker" id="color-picker"></div>
+      <div class="face-block-grid" id="manual-grid" style="width:120px;margin:0 auto;gap:4px;"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-scan-done" onclick="goToResult()" style="display:none;">スキャン完了</button>
+    <button class="btn-secondary" id="btn-scan-back" onclick="goToSetup()">戻る</button>
+  </div>
+
+  <!-- Screen 2: Result -->
+  <div class="screen" id="screen-result">
+    <div style="padding: 16px 20px 8px;">
+      <div class="hero-title" style="font-size:18px;" id="result-title">スキャン完了</div>
+      <div class="hero-sub" id="result-sub">キューブの状態を確認してください</div>
+    </div>
+
+    <div class="card">
+      <div style="text-align:center;margin-bottom:12px;">
+        <span class="badge badge-green" id="result-badge">✓ 6面検出完了</span>
+      </div>
+      <div class="all-faces" id="all-faces-preview"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-solve" onclick="goToAI()">AIに解き方を聞く</button>
+    <button class="btn-secondary" id="btn-rescan" onclick="goToScan()">もう一度スキャン</button>
+  </div>
+
+  <!-- Screen 3: AI -->
+  <div class="screen" id="screen-ai">
+    <div style="padding: 16px 20px 8px;">
+      <div class="hero-title" style="font-size:18px;" id="ai-title">解き方ガイド</div>
+      <div class="hero-sub" id="ai-sub">AIがステップごとに解説します</div>
+    </div>
+
+    <div class="card" id="ai-card">
+      <div id="chat-area"></div>
+      <div id="loading-area" style="display:none;text-align:center;padding:8px 0;">
+        <span class="badge badge-yellow badge-pulse" id="loading-badge">AIが考え中...</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-next-step" onclick="nextAIStep()" style="display:none;">次のステップへ</button>
+    <button class="btn-secondary" id="btn-restart" onclick="goToSetup()">最初からやり直す</button>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let lang = 'ja';
+let apiKey = localStorage.getItem('cubby_groq_key') || '';
+let currentFace = 0;
+let scannedFaces = {};
+let stream = null;
+let cameraActive = false;
+let currentStep = 0;
+let selectedColor = 'W';
+let editingCell = -1;
+let isDemo = false;
+
+const COLOR_MAP = {
+  W: '#ffffff', Y: '#FFD700', R: '#E8413A',
+  O: '#FF8C00', B: '#2563EB', G: '#16A34A'
+};
+const COLOR_BORDER = {
+  W: 'rgba(0,0,0,0.2)', Y: 'rgba(0,0,0,0.1)', R: 'rgba(0,0,0,0.1)',
+  O: 'rgba(0,0,0,0.1)', B: 'rgba(0,0,0,0.1)', G: 'rgba(0,0,0,0.1)'
+};
+
+const DEMO_STATE = {
+  top:    ['W','W','W','W','W','W','W','W','W'],
+  front:  ['R','G','R','R','R','R','R','R','R'],
+  right:  ['B','R','B','B','B','B','B','B','B'],
+  left:   ['G','B','G','G','G','G','G','G','G'],
+  back:   ['O','O','O','O','O','O','O','O','O'],
+  bottom: ['Y','Y','Y','Y','Y','Y','Y','W','Y'],
+};
+
+const FACES_JA = ['上面','前面','右面','左面','後面','下面'];
+const FACES_EN = ['Top','Front','Right','Left','Back','Bottom'];
+const FACE_KEYS = ['top','front','right','left','back','bottom'];
+
+// Steps
+const STEPS = {
+  ja: [
+    `まず全体の状態を確認します。\n\nセンターピース（各面の真ん中）は固定されています。これがその面の色になります。\n\n白いセンターが上になるように持ってください。`,
+    `ステップ1：白い十字を作る\n\n上面に白いエッジピースを4つ集めて十字を作ります。\n\n例えば前面の上のエッジが白なら、U・F・U'・F' の動きで上面に移動できます。\n\n焦らずひとつずつ確認しましょう。`,
+    `ステップ2：第一層（上段）を完成させる\n\n白いコーナーピースを正しい位置に入れます。\n\n「白・赤・青」のコーナーは白が上・赤が前・青が右の位置に入ります。\n\n手順：R・U・R'・U' を繰り返して正しい位置へ。`,
+    `ステップ3：第二層（中段）のエッジを揃える\n\n黄色のついていないエッジピースを中段に入れます。\n\n右に入れる場合：U・R・U'・R'・U'・F'・U・F\n左に入れる場合：U'・L'・U・L・U・F・U'・F'`,
+    `ステップ4：黄色い十字を作る（最終段）\n\n上面（黄色面）に十字を作ります。\n\n手順：F・R・U・R'・U'・F'\n\nこれを繰り返すと十字が現れます。向きは気にしなくて大丈夫です。`,
+    `ステップ5：黄色いエッジを揃える\n\n十字の4辺を正しい面に合わせます。\n\n手順：R・U・R'・U・R・U2・R'\n\n揃っていない2面が正面と右面になるように持って実行します。`,
+    `ステップ6：黄色いコーナーを正しい位置に\n\n4つのコーナーを正しい位置（角）に移動します。\n\n手順：U・R・U'・L'・U・R'・U'・L\n\n正しい位置に来るまで繰り返します。`,
+    `ステップ7：コーナーの向きを揃えて完成！\n\n最後に各コーナーを正しい向きにします。\n\n手順：R'・D'・R・D を2回または4回繰り返す。\n\n1つずつ揃えてから次のコーナーへ。\n\n🎉 完成おめでとうございます！`,
+  ],
+  en: [
+    `Let's start by understanding the cube.\n\nThe center pieces (middle of each face) never move — they define each face's color.\n\nHold the cube with the white center on top.`,
+    `Step 1: Make the white cross\n\nBring 4 white edge pieces to the top face to form a cross.\n\nIf a white edge is on the front-top, use U·F·U'·F' to move it into position.\n\nTake your time with each piece.`,
+    `Step 2: Complete the first layer (top)\n\nInsert white corner pieces into their correct positions.\n\nThe white-red-blue corner goes where white is on top, red in front, blue on right.\n\nAlgorithm: R·U·R'·U' — repeat until the corner drops in.`,
+    `Step 3: Solve the second layer (middle) edges\n\nInsert non-yellow edge pieces into the middle layer.\n\nTo insert right: U·R·U'·R'·U'·F'·U·F\nTo insert left: U'·L'·U·L·U·F·U'·F'`,
+    `Step 4: Make the yellow cross (last layer)\n\nCreate a cross on the top (yellow) face.\n\nAlgorithm: F·R·U·R'·U'·F'\n\nRepeat until a cross appears. Orientation doesn't matter yet.`,
+    `Step 5: Orient the yellow edges\n\nAlign the 4 cross edges to match their side colors.\n\nAlgorithm: R·U·R'·U·R·U2·R'\n\nHold the cube so 2 mismatched edges face front and right.`,
+    `Step 6: Position the yellow corners\n\nMove corners to their correct positions (not orientation).\n\nAlgorithm: U·R·U'·L'·U·R'·U'·L\n\nRepeat until all corners are in the right spot.`,
+    `Step 7: Orient corners — and you're done!\n\nTwist each corner into correct orientation.\n\nAlgorithm: R'·D'·R·D — repeat 2 or 4 times per corner.\n\nDo one corner at a time, then rotate the top layer.\n\n🎉 Congratulations! You solved it!`,
+  ]
+};
+
+// ===== LANG =====
+const T = {
+  ja: {
+    heroTitle: 'キューブを<br>解いてみよう。',
+    heroSub: 'AIがステップごとに優しく教えます。まずGroq APIキーを設定してください（無料）。',
+    setupCardTitle: 'API設定',
+    step1: '<a href="https://console.groq.com" target="_blank" class="setup-link">console.groq.com</a> でアカウント作成（無料）',
+    step2: 'API Keys → Create API Key をクリック',
+    step3: '発行されたキーを下に貼り付けて保存',
+    saveBtnText: '保存',
+    btnStart: 'カメラでスキャン開始',
+    btnDemo: 'デモを見る（キーなし）',
+    noticeText: 'APIキーはお使いのブラウザにのみ保存されます。外部に送信されることはありません。',
+    scanTitle: '面をスキャン',
+    scanSub: '6面すべてをスキャンしてください',
+    camLabelText: 'カメラを起動する',
+    camSubText: 'タップしてください',
+    manualTitle: '手動で色を入力',
+    btnScanDone: 'スキャン完了',
+    btnScanBack: '戻る',
+    resultTitle: 'スキャン完了',
+    resultSub: 'キューブの状態を確認してください',
+    resultBadge: '✓ 6面検出完了',
+    btnSolve: 'AIに解き方を聞く',
+    btnRescan: 'もう一度スキャン',
+    aiTitle: '解き方ガイド',
+    aiSub: 'AIがステップごとに解説します',
+    loadingBadge: 'AIが考え中...',
+    btnNextStep: '次のステップへ',
+    btnRestart: '最初からやり直す',
+    keyOk: '✓ APIキーを保存しました',
+    keySkip: '⚠ デモモードで動作します（解説はサンプルです）',
+    faces: FACES_JA,
+    scanning: 'スキャン中...',
+    captured: '✓ キャプチャ完了',
+    startCam: 'タップしてカメラ起動',
+    capture: 'タップして撮影',
+  },
+  en: {
+    heroTitle: 'Solve your<br>Rubik\'s Cube.',
+    heroSub: 'AI guides you step by step. Set up your free Groq API key to get started.',
+    setupCardTitle: 'API Setup',
+    step1: 'Create a free account at <a href="https://console.groq.com" target="_blank" class="setup-link">console.groq.com</a>',
+    step2: 'Go to API Keys → Create API Key',
+    step3: 'Paste your key below and save',
+    saveBtnText: 'Save',
+    btnStart: 'Start Camera Scan',
+    btnDemo: 'Try Demo (no key)',
+    noticeText: 'Your API key is stored only in your browser. It is never sent to our servers.',
+    scanTitle: 'Scan your cube',
+    scanSub: 'Scan all 6 faces of the cube',
+    camLabelText: 'Start camera',
+    camSubText: 'Tap to begin',
+    manualTitle: 'Enter colors manually',
+    btnScanDone: 'Scan complete',
+    btnScanBack: 'Back',
+    resultTitle: 'Scan complete',
+    resultSub: 'Check your cube state below',
+    resultBadge: '✓ 6 faces detected',
+    btnSolve: 'Ask AI to solve',
+    btnRescan: 'Scan again',
+    aiTitle: 'Solving Guide',
+    aiSub: 'AI will guide you step by step',
+    loadingBadge: 'AI is thinking...',
+    btnNextStep: 'Next step',
+    btnRestart: 'Start over',
+    keyOk: '✓ API key saved',
+    keySkip: '⚠ Running in demo mode (sample explanations)',
+    faces: FACES_EN,
+    scanning: 'Scanning...',
+    captured: '✓ Captured',
+    startCam: 'Tap to start camera',
+    capture: 'Tap to capture',
+  }
+};
+
+function t(key) { return T[lang][key]; }
+
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', (l==='ja' && b.textContent==='日本語') || (l==='en' && b.textContent==='EN'));
+  });
+  applyLang();
+}
+
+function applyLang() {
+  const tl = T[lang];
+  document.getElementById('hero-title').innerHTML = tl.heroTitle;
+  document.getElementById('hero-sub').textContent = tl.heroSub;
+  document.getElementById('setup-card-title').textContent = tl.setupCardTitle;
+  document.getElementById('step1-text').innerHTML = tl.step1;
+  document.getElementById('step2-text').textContent = tl.step2;
+  document.getElementById('step3-text').textContent = tl.step3;
+  document.getElementById('save-btn').textContent = tl.saveBtnText;
+  document.getElementById('btn-start').textContent = tl.btnStart;
+  document.getElementById('btn-demo').textContent = tl.btnDemo;
+  document.getElementById('notice-text').textContent = tl.noticeText;
+  document.getElementById('scan-title').textContent = tl.scanTitle;
+  document.getElementById('scan-sub').textContent = tl.scanSub;
+  document.getElementById('cam-label-text').textContent = tl.camLabelText;
+  document.getElementById('cam-sub-text').textContent = tl.camSubText;
+  document.getElementById('manual-title').textContent = tl.manualTitle;
+  document.getElementById('btn-scan-done').textContent = tl.btnScanDone;
+  document.getElementById('btn-scan-back').textContent = tl.btnScanBack;
+  document.getElementById('result-title').textContent = tl.resultTitle;
+  document.getElementById('result-sub').textContent = tl.resultSub;
+  document.getElementById('result-badge').textContent = tl.resultBadge;
+  document.getElementById('btn-solve').textContent = tl.btnSolve;
+  document.getElementById('btn-rescan').textContent = tl.btnRescan;
+  document.getElementById('ai-title').textContent = tl.aiTitle;
+  document.getElementById('ai-sub').textContent = tl.aiSub;
+  document.getElementById('loading-badge').textContent = tl.loadingBadge;
+  document.getElementById('btn-next-step').textContent = tl.btnNextStep;
+  document.getElementById('btn-restart').textContent = tl.btnRestart;
+  if(document.getElementById('screen-scan').classList.contains('active')) updateFaceTabs();
+}
+
+// ===== API KEY =====
+function saveApiKey() {
+  const val = document.getElementById('apikey-input').value.trim();
+  if(val) {
+    apiKey = val;
+    localStorage.setItem('cubby_groq_key', val);
+    const s = document.getElementById('key-status');
+    s.textContent = t('keyOk');
+    s.className = 'key-status ok';
+    document.getElementById('apikey-input').classList.add('saved');
+  }
+}
+
+function initApiKeyField() {
+  if(apiKey) {
+    document.getElementById('apikey-input').value = apiKey;
+    document.getElementById('apikey-input').classList.add('saved');
+    const s = document.getElementById('key-status');
+    s.textContent = t('keyOk');
+    s.className = 'key-status ok';
+  }
+}
+
+// ===== SCREENS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function updateStepBar(step) {
+  for(let i=0;i<4;i++){
+    const d = document.getElementById('sdot'+i);
+    d.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+  }
+  for(let i=0;i<3;i++){
+    const l = document.getElementById('sline'+i);
+    l.className = 'step-line' + (i < step ? ' done' : '');
+  }
+}
+
+function goToSetup() {
+  stopCamera();
+  scannedFaces = {};
+  currentFace = 0;
+  isDemo = false;
+  showScreen('setup');
+  updateStepBar(0);
+}
+
+function goToScan() {
+  currentFace = 0;
+  showScreen('scan');
+  updateStepBar(1);
+  updateFaceTabs();
+  document.getElementById('btn-scan-done').style.display = 'none';
+  initCamera();
+}
+
+function goToResult() {
+  stopCamera();
+  showScreen('result');
+  updateStepBar(2);
+  renderAllFaces();
+}
+
+function goToAI() {
+  showScreen('ai');
+  updateStepBar(3);
+  currentStep = 0;
+  document.getElementById('chat-area').innerHTML = '';
+  document.getElementById('btn-next-step').style.display = 'none';
+  fetchAIStep();
+}
+
+function runDemo() {
+  isDemo = true;
+  scannedFaces = {...DEMO_STATE};
+  goToResult();
+}
+
+// ===== FACE TABS =====
+function updateFaceTabs() {
+  const faces = T[lang].faces;
+  const tabs = document.getElementById('face-tabs');
+  tabs.innerHTML = faces.map((f, i) => {
+    const done = scannedFaces[FACE_KEYS[i]];
+    const active = i === currentFace;
+    return `<button class="face-tab${active?' active':''}${done?' done':''}" onclick="selectFace(${i})">${f}</button>`;
+  }).join('');
+  document.getElementById('scan-title').textContent = T[lang].scanTitle + ` (${Object.keys(scannedFaces).length}/6)`;
+}
+
+function selectFace(i) {
+  currentFace = i;
+  updateFaceTabs();
+}
+
+// ===== CAMERA =====
+async function initCamera() {
+  const placeholder = document.getElementById('cam-placeholder');
+  const video = document.getElementById('video');
+  const guide = document.getElementById('scan-guide');
+  const captureBtn = document.getElementById('capture-btn');
+
+  placeholder.onclick = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+      });
+      video.srcObject = stream;
+      video.classList.add('active');
+      placeholder.style.display = 'none';
+      guide.style.display = 'block';
+      captureBtn.style.display = 'flex';
+      cameraActive = true;
+    } catch(e) {
+      showManualInput();
+    }
+  };
+}
+
+function stopCamera() {
+  if(stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  cameraActive = false;
+}
+
+function captureFrame() {
+  if(!cameraActive) return;
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const overlay = document.getElementById('scan-overlay');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  const colors = extractColors(ctx, canvas.width, canvas.height);
+  scannedFaces[FACE_KEYS[currentFace]] = colors;
+
+  overlay.innerHTML = `<span class="badge badge-green">${T[lang].captured}</span>`;
+  setTimeout(() => { overlay.innerHTML = ''; }, 1000);
+
+  if(currentFace < 5) {
+    currentFace++;
+    updateFaceTabs();
+  }
+
+  const done = Object.keys(scannedFaces).length;
+  if(done >= 6) {
+    document.getElementById('btn-scan-done').style.display = 'block';
+  }
+}
+
+function extractColors(ctx, w, h) {
+  const colorNames = ['W','Y','R','O','B','G'];
+  const colorRGB = [
+    [255,255,255],[255,215,0],[232,65,58],[255,140,0],[37,99,235],[22,163,74]
+  ];
+  const result = [];
+  const margin = 0.2;
+  const guideLeft = w * (0.5 - 0.3);
+  const guideTop = h * (0.5 - 0.3);
+  const guideSize = w * 0.6;
+  const cellSize = guideSize / 3;
+
+  for(let row=0; row<3; row++) {
+    for(let col=0; col<3; col++) {
+      const cx = guideLeft + col * cellSize + cellSize * 0.5;
+      const cy = guideTop + row * cellSize + cellSize * 0.5;
+      const sampleSize = Math.floor(cellSize * 0.2);
+      const x = Math.max(0, Math.floor(cx - sampleSize/2));
+      const y = Math.max(0, Math.floor(cy - sampleSize/2));
+      const data = ctx.getImageData(x, y, sampleSize || 1, sampleSize || 1).data;
+      let r=0,g=0,b=0,cnt=0;
+      for(let i=0;i<data.length;i+=4){r+=data[i];g+=data[i+1];b+=data[i+2];cnt++;}
+      r=r/cnt; g=g/cnt; b=b/cnt;
+      let best=0, bestDist=Infinity;
+      colorRGB.forEach(([cr,cg,cb],idx)=>{
+        const d = (r-cr)**2+(g-cg)**2+(b-cb)**2;
+        if(d<bestDist){bestDist=d;best=idx;}
+      });
+      result.push(colorNames[best]);
+    }
+  }
+  return result;
+}
+
+function showManualInput() {
+  document.getElementById('manual-input-card').style.display = 'block';
+  renderColorPicker();
+  renderManualGrid();
+}
+
+function renderColorPicker() {
+  const picker = document.getElementById('color-picker');
+  const labels = { W:'白', Y:'黄', R:'赤', O:'橙', B:'青', G:'緑' };
+  picker.innerHTML = Object.entries(COLOR_MAP).map(([k,v]) =>
+    `<div class="color-swatch${k===selectedColor?' selected':''}" style="background:${v};border:2px solid ${k===selectedColor?'#333':'transparent'};${k==='W'?'border-color:#ccc;':''}" onclick="selectColor('${k}')"></div>`
+  ).join('');
+}
+
+function selectColor(c) {
+  selectedColor = c;
+  renderColorPicker();
+}
+
+function renderManualGrid() {
+  const grid = document.getElementById('manual-grid');
+  const face = scannedFaces[FACE_KEYS[currentFace]] || Array(9).fill('');
+  grid.innerHTML = face.map((c, i) =>
+    `<div class="face-block-cell" style="background:${c?COLOR_MAP[c]:'#eee'};border:${editingCell===i?'2px solid #333':'0.5px solid rgba(0,0,0,0.1)'};cursor:pointer;" onclick="setCell(${i})"></div>`
+  ).join('');
+}
+
+function setCell(i) {
+  if(!scannedFaces[FACE_KEYS[currentFace]]) scannedFaces[FACE_KEYS[currentFace]] = Array(9).fill('W');
+  scannedFaces[FACE_KEYS[currentFace]][i] = selectedColor;
+  editingCell = i;
+  renderManualGrid();
+  if(scannedFaces[FACE_KEYS[currentFace]].every(c=>c)) {
+    const done = Object.keys(scannedFaces).filter(k => scannedFaces[k] && scannedFaces[k].every(c=>c)).length;
+    if(done >= 6) document.getElementById('btn-scan-done').style.display = 'block';
+  }
+}
+
+// ===== RESULT =====
+function renderAllFaces() {
+  const container = document.getElementById('all-faces-preview');
+  const faces = T[lang].faces;
+  container.innerHTML = FACE_KEYS.map((key, i) => {
+    const face = scannedFaces[key] || Array(9).fill('W');
+    const cells = face.map(c =>
+      `<div class="face-block-cell" style="background:${COLOR_MAP[c]||'#eee'};border:0.5px solid ${COLOR_BORDER[c]||'rgba(0,0,0,0.1)'};"></div>`
+    ).join('');
+    return `<div class="face-block"><div class="face-block-label">${faces[i]}</div><div class="face-block-grid">${cells}</div></div>`;
+  }).join('');
+}
+
+// ===== AI =====
+async function fetchAIStep() {
+  const steps = STEPS[lang];
+  document.getElementById('loading-area').style.display = 'block';
+  document.getElementById('btn-next-step').style.display = 'none';
+
+  await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+
+  if(apiKey && !isDemo) {
+    try {
+      const prompt = buildPrompt();
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama3-8b-8192',
+          messages: [
+            { role: 'system', content: lang === 'ja'
+              ? 'あなたはルービックキューブの専門家AIです。子どもにも分かる優しい日本語でステップごとに解説してください。絵文字を適度に使い、励ましの言葉も入れてください。'
+              : 'You are an expert Rubik\'s Cube AI tutor. Explain each step clearly and encouragingly. Use simple language suitable for all ages.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 400,
+          temperature: 0.7
+        })
+      });
+      const data = await res.json();
+      if(data.choices && data.choices[0]) {
+        showAIBubble(data.choices[0].message.content, currentStep);
+        document.getElementById('loading-area').style.display = 'none';
+        if(currentStep < steps.length - 1) {
+          document.getElementById('btn-next-step').style.display = 'block';
+        }
+        return;
+      }
+    } catch(e) {}
+  }
+
+  document.getElementById('loading-area').style.display = 'none';
+  showAIBubble(steps[currentStep], currentStep);
+  if(currentStep < steps.length - 1) {
+    document.getElementById('btn-next-step').style.display = 'block';
+  }
+}
+
+function buildPrompt() {
+  const steps = STEPS[lang];
+  const faceDesc = FACE_KEYS.map((k,i) => {
+    const f = scannedFaces[k];
+    if(!f) return '';
+    return `${T[lang].faces[i]}: ${f.join(',')}`;
+  }).join('\n');
+
+  if(lang === 'ja') {
+    return `キューブの現在の状態:\n${faceDesc}\n\nステップ${currentStep+1}（全${steps.length}ステップ）の解説をしてください。\n内容: ${steps[currentStep].split('\n')[0]}`;
+  } else {
+    return `Current cube state:\n${faceDesc}\n\nPlease explain step ${currentStep+1} of ${steps.length}.\nTopic: ${steps[currentStep].split('\n')[0]}`;
+  }
+}
+
+function showAIBubble(text, step) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'chat-bubble';
+  div.innerHTML = `<div class="step-num-badge">Step ${step+1}</div>\n${text}`;
+  area.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function nextAIStep() {
+  currentStep++;
+  fetchAIStep();
+}
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', () => {
+  initApiKeyField();
+  applyLang();
+});
+</script>
+</body>
+</html>
