@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cubby">
+<meta name="theme-color" content="#0a0a0a">
+<title>Cubby v9</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g:#00D68F;--gdim:rgba(0,214,143,0.13);
+  --bg:#0a0a0a;--s1:#141414;--s2:#1e1e1e;--s3:#272727;
+  --b1:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.14);
+  --t1:#f0f0f0;--t2:#888;--t3:#444;
+  --red:#FF4757;--amber:#FFB830;--blue:#3D8EFF;
+  --r:14px;--rsm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:'Noto Sans JP',sans-serif;overflow:hidden;}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,0.97);border-top:1px solid var(--b1);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom,0);}
+.nb{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--t2);font-size:10px;font-family:'Noto Sans JP',sans-serif;transition:color .2s;}
+.nb.on{color:var(--g);}
+.ni{font-size:19px;line-height:1;}
+.scr{position:fixed;inset:0;bottom:56px;display:none;flex-direction:column;overflow-y:auto;background:var(--bg);}
+.scr.on{display:flex;}
+.hdr{padding:calc(env(safe-area-inset-top,16px)+4px) 14px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:10px;}
+.logo{font-family:'DM Mono',monospace;font-size:21px;font-weight:500;letter-spacing:-1px;}
+.logo em{color:var(--g);font-style:normal;}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:13px;margin:0 12px 9px;}
+.ctitle{font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px;}
+.btn{width:100%;padding:13px;border-radius:var(--r);border:none;font-size:14px;font-family:'Noto Sans JP',sans-serif;font-weight:700;cursor:pointer;transition:all .18s;text-align:center;display:block;}
+.btn:active{transform:scale(.97);}
+.btnP{background:var(--g);color:#000;}
+.btnS{background:transparent;color:var(--t2);border:1px solid var(--b2);}
+.bsm{padding:6px 13px;font-size:12px;border-radius:var(--rsm);border:none;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:500;}
+.bsmG{background:var(--g);color:#000;}
+.bsmD{background:var(--s2);color:var(--t2);border:1px solid var(--b2);}
+.inp{background:var(--s2);border:1px solid var(--b2);border-radius:var(--rsm);padding:10px 12px;font-size:13px;font-family:'DM Mono',monospace;color:var(--t1);outline:none;width:100%;}
+.inp:focus{border-color:var(--g);}
+.inp.ok{border-color:var(--g);}
+.gbadge{background:var(--gdim);border:1px solid rgba(0,214,143,.3);color:var(--g);font-size:11px;font-family:'DM Mono',monospace;padding:3px 9px;border-radius:20px;}
+.ftabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.ftabs::-webkit-scrollbar{display:none;}
+.ft{padding:5px 10px;border-radius:20px;border:1px solid var(--b2);font-size:11px;font-family:'DM Mono',monospace;color:var(--t2);background:var(--s2);white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .2s;}
+.ft.on{background:var(--g);color:#000;border-color:var(--g);}
+.ft.done{background:rgba(0,214,143,.12);color:var(--g);border-color:rgba(0,214,143,.25);}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:164px;margin:0 auto;}
+.fc{aspect-ratio:1;border-radius:7px;border:2px solid rgba(255,255,255,.1);cursor:pointer;transition:all .15s;}
+.fc:active{transform:scale(.88);}
+.fc.ed{border-color:#fff;border-width:3px;}
+.swrow{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:9px 0 5px;}
+.sw{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:transform .15s;}
+.sw.sel{border-color:#fff;transform:scale(1.15);}
+.amini{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+
+/* AR SCREEN */
+#ar-screen{position:fixed;inset:0;background:#000;display:none;flex-direction:column;z-index:100;}
+#ar-screen.on{display:flex;}
+#ar-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+#ar-canvas{position:absolute;inset:0;width:100%;height:100%;}
+.ar-top{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,16px)+4px) 13px 14px;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%);display:flex;align-items:center;justify-content:space-between;z-index:10;gap:8px;}
+.ar-logo{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;color:#fff;letter-spacing:-1px;flex-shrink:0;}
+.ar-logo em{color:var(--g);font-style:normal;}
+.ar-close{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:15px;cursor:pointer;flex-shrink:0;}
+
+/* CONFIDENCE METER */
+.conf-meter{flex:1;display:flex;flex-direction:column;gap:3px;}
+.conf-bar-wrap{height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden;}
+.conf-bar-fill{height:100%;border-radius:2px;transition:width .25s,background .25s;}
+.conf-label{font-size:9px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.5);text-align:right;}
+
+/* COLOR DEBUG PANEL */
+.color-debug{position:absolute;top:50%;right:8px;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;z-index:8;}
+.cd-cell{width:18px;height:18px;border-radius:3px;border:1px solid rgba(255,255,255,.3);}
+
+.ar-bottom{position:absolute;bottom:0;left:0;right:0;padding:0 0 env(safe-area-inset-bottom,8px);z-index:10;}
+.ar-ftabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding:0 9px 5px;}
+.ar-ftabs::-webkit-scrollbar{display:none;}
+.ar-ft{padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.18);font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.5);background:rgba(28,28,28,.7);white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .2s;backdrop-filter:blur(8px);}
+.ar-ft.on{background:var(--g);color:#000;border-color:var(--g);}
+.ar-ft.done{background:rgba(0,214,143,.15);color:var(--g);border-color:rgba(0,214,143,.3);}
+.ar-scard{margin:0 9px 6px;background:rgba(5,5,5,0.93);border:1px solid var(--b2);border-radius:var(--r);padding:11px 13px;backdrop-filter:blur(20px);}
+.ar-capture{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.9);border:3px solid var(--g);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s;margin:3px auto;}
+.ar-capture:active{transform:scale(.87);}
+.ar-capture::after{content:'';width:44px;height:44px;border-radius:50%;background:var(--g);display:block;}
+.ar-nav{display:flex;gap:7px;padding:0 9px 5px;}
+.ar-prev{flex:0 0 48px;height:48px;border-radius:var(--rsm);background:rgba(28,28,28,.87);border:1px solid var(--b2);color:var(--t2);font-size:17px;cursor:pointer;}
+.ar-next{flex:1;height:48px;border-radius:var(--rsm);background:var(--g);border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+.fb{flex:1;padding:9px;border-radius:var(--rsm);border:1px solid var(--b2);background:rgba(18,18,18,.87);font-size:15px;cursor:pointer;text-align:center;transition:all .2s;}
+.fb.ok{background:rgba(0,214,143,.18);border-color:var(--g);}
+.fb.ng{background:rgba(255,71,87,.18);border-color:var(--red);}
+.pdots{display:flex;justify-content:center;gap:5px;padding:5px 0 3px;flex-wrap:wrap;}
+.pd{width:5px;height:5px;border-radius:50%;background:var(--b2);transition:all .3s;}
+.pd.on{background:var(--g);width:16px;border-radius:3px;}
+.pd.done{background:var(--g);}
+.pd.fail{background:var(--red);}
+
+/* SOLVER */
+#solver-overlay{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:400;display:none;flex-direction:column;overflow-y:auto;}
+#solver-overlay.on{display:flex;}
+.sv-header{padding:calc(env(safe-area-inset-top,20px)+10px) 14px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:12px;}
+.sv-logo{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;}
+.sv-logo em{color:var(--g);font-style:normal;}
+.sv-close{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:14px;cursor:pointer;}
+.sv-body{padding:0 12px;flex:1;}
+.sv-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;margin-bottom:12px;font-size:12px;font-family:'DM Mono',monospace;}
+.sv-b-calc{background:rgba(61,142,255,.15);border:1px solid rgba(61,142,255,.3);color:var(--blue);}
+.sv-b-ok{background:rgba(0,214,143,.15);border:1px solid rgba(0,214,143,.3);color:var(--g);}
+.sv-b-err{background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);color:var(--red);}
+.sv-seq-wrap{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:12px;margin-bottom:10px;}
+.sv-seq{display:flex;flex-wrap:wrap;gap:4px;}
+.smove{font-family:'DM Mono',monospace;font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid var(--b2);background:var(--s2);color:var(--t1);cursor:pointer;transition:all .2s;}
+.smove.cur{background:var(--g);color:#000;border-color:var(--g);transform:scale(1.08);}
+.smove.done{background:var(--s3);color:var(--t3);border-color:var(--b1);}
+.sv-prog-wrap{background:var(--s2);border-radius:20px;height:5px;overflow:hidden;margin-bottom:10px;}
+.sv-prog{height:100%;background:var(--g);border-radius:20px;transition:width .4s;}
+.sv-step{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:13px;margin-bottom:8px;}
+.sv-move-big{font-family:'DM Mono',monospace;font-size:52px;font-weight:500;color:var(--g);text-align:center;line-height:1;margin:8px 0;}
+.sv-move-hint{font-size:13px;color:var(--t2);text-align:center;line-height:1.6;margin-bottom:6px;}
+.sv-phase{font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);text-align:center;margin-bottom:4px;}
+.sv-ai-txt{font-size:12px;color:var(--t2);line-height:1.65;min-height:18px;}
+.sv-nav{display:flex;gap:7px;margin-bottom:8px;}
+.sv-prev{flex:0 0 50px;height:50px;border-radius:var(--rsm);background:var(--s2);border:1px solid var(--b2);color:var(--t2);font-size:18px;cursor:pointer;}
+.sv-spk{flex:0 0 50px;height:50px;border-radius:var(--rsm);background:var(--s2);border:1px solid rgba(0,214,143,.3);color:var(--g);font-size:18px;cursor:pointer;}
+.sv-next{flex:1;height:50px;border-radius:var(--rsm);background:var(--g);border:none;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+.sv-fb{display:flex;gap:7px;margin-bottom:10px;}
+.sfb{flex:1;padding:9px;border-radius:var(--rsm);border:1px solid var(--b2);background:var(--s2);font-size:16px;cursor:pointer;text-align:center;transition:all .2s;}
+.sfb.ok{background:rgba(0,214,143,.15);border-color:var(--g);}
+.sfb.ng{background:rgba(255,71,87,.15);border-color:var(--red);}
+.sv-complete{text-align:center;padding:16px 0;}
+.sc-icon{font-size:60px;margin-bottom:10px;animation:pop .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px;}
+.sc-box{background:var(--s2);border-radius:var(--rsm);padding:10px;text-align:center;}
+.sc-num{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--g);}
+.sc-lbl{font-size:10px;color:var(--t2);margin-top:2px;}
+
+/* TIMER */
+#s-timer{position:fixed;inset:0;bottom:56px;display:none;flex-direction:column;background:var(--bg);overflow-y:auto;}
+#s-timer.on{display:flex;}
+.timer-display{font-family:'DM Mono',monospace;font-size:64px;font-weight:500;letter-spacing:-3px;color:var(--t1);line-height:1;margin:10px 0;text-align:center;}
+.timer-display.running{color:var(--g);}
+.timer-display.stopped{color:var(--amber);}
+.timer-ms{font-size:28px;color:var(--t2);}
+.insp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:450;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.insp-overlay.hide{display:none;}
+.insp-num{font-family:'DM Mono',monospace;font-size:100px;font-weight:500;color:var(--g);line-height:1;}
+.insp-num.warn{color:var(--amber);}
+.insp-num.danger{color:var(--red);animation:shake .08s infinite;}
+@keyframes shake{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+.rrow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b1);}
+.rrow:last-child{border-bottom:none;}
+.rrank{font-family:'DM Mono',monospace;font-size:12px;color:var(--t3);width:22px;}
+.rrank.gold{color:#FFD700;}.rrank.silver{color:#C0C0C0;}.rrank.bronze{color:#CD7F32;}
+
+/* PRECISION PANEL */
+.prec-panel{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px;margin:0 12px 9px;}
+.prec-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.prec-label{font-size:11px;color:var(--t2);font-family:'DM Mono',monospace;}
+.prec-val{font-size:11px;font-family:'DM Mono',monospace;}
+.prec-bar-bg{flex:1;height:3px;background:var(--s3);border-radius:2px;margin:0 8px;overflow:hidden;}
+.prec-bar-fg{height:100%;border-radius:2px;transition:width .3s;}
+
+.toast{position:fixed;top:env(safe-area-inset-top,14px);left:50%;transform:translateX(-50%) translateY(-70px);background:rgba(0,214,143,.95);color:#000;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none;max-width:92vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(12px);}
+.toast.err{background:rgba(255,71,87,.95);color:#fff;}
+.hide{display:none!important;}
+.ldots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--g);animation:lw 1.2s ease-in-out infinite;margin:0 2px;}
+.ldots span:nth-child(2){animation-delay:.15s;}.ldots span:nth-child(3){animation-delay:.3s;}
+@keyframes lw{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+</style>
+</head>
+<body>
+
+<!-- ===== AR SCREEN ===== -->
+<div id="ar-screen">
+  <video id="ar-video" playsinline autoplay muted></video>
+  <canvas id="ar-canvas"></canvas>
+
+  <div class="ar-top">
+    <div class="ar-logo">cub<em>by</em></div>
+    <div class="conf-meter">
+      <div class="conf-bar-wrap"><div class="conf-bar-fill" id="conf-fill" style="width:0%;background:var(--red);"></div></div>
+      <div class="conf-label" id="conf-label">準備中...</div>
+    </div>
+    <button class="ar-close" onclick="closeAR()">✕</button>
+  </div>
+
+  <!-- Color debug: live sampled colors -->
+  <div class="color-debug" id="color-debug"></div>
+
+  <div class="ar-bottom" id="ar-bottom">
+    <div id="ar-scan-ui">
+      <div class="ar-ftabs" id="ar-ftabs"></div>
+      <div style="display:flex;justify-content:center;">
+        <button class="ar-capture" onclick="arCapture()"></button>
+      </div>
+      <div style="text-align:center;padding:2px 0 5px;font-size:10px;color:rgba(255,255,255,.3);">タップしてキャプチャ</div>
+      <div style="display:flex;justify-content:center;gap:8px;padding:0 9px 6px;">
+        <button class="bsm bsmD" onclick="toggleWB()" id="wb-btn" style="font-size:10px;">⚖️ WB: AUTO</button>
+        <button class="bsm bsmG" id="ar-guide-btn" onclick="arStartSolver()" style="display:none;font-size:11px;">🧠 解法計算 →</button>
+      </div>
+    </div>
+
+    <div id="ar-guide-ui" style="display:none;">
+      <div class="ar-scard">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;background:var(--g);color:#000;padding:2px 7px;border-radius:10px;" id="ar-snum"></div>
+          <div style="font-size:12px;font-weight:500;" id="ar-stit"></div>
+          <div id="ar-ai-ld" class="hide"><div class="ldots"><span></span><span></span><span></span></div></div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.6;" id="ar-sbody"></div>
+        <div style="margin-top:7px;background:rgba(255,255,255,.07);border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px;" id="ar-algob" style="display:none;">
+          <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:1px;color:#fff;flex:1;" id="ar-algotxt"></div>
+          <button style="width:28px;height:28px;border-radius:50%;background:var(--gdim);border:1px solid rgba(0,214,143,.4);color:var(--g);font-size:12px;cursor:pointer;" onclick="arSpeak()">🔊</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin:0 9px 5px;">
+        <div class="fb" id="ar-fb-ok" onclick="arFB(true)">👍 OK</div>
+        <div class="fb" id="ar-fb-ng" onclick="arFB(false)">🤔 難しい</div>
+      </div>
+      <div class="pdots" id="ar-pdots"></div>
+      <div class="ar-nav">
+        <button class="ar-prev" id="ar-prev" onclick="arPrev()">←</button>
+        <button class="ar-next" id="ar-next" onclick="arNext()">次のステップ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SOLVER OVERLAY ===== -->
+<div id="solver-overlay">
+  <div class="sv-header">
+    <div class="sv-logo">cub<em>by</em> <span style="font-size:11px;color:var(--t3);">solver v9</span></div>
+    <button class="sv-close" onclick="closeSolver()">✕</button>
+  </div>
+  <div class="sv-body">
+    <div class="sv-badge sv-b-calc" id="sv-badge">
+      <div class="ldots"><span></span><span></span><span></span></div>
+      <span id="sv-badge-txt">Kociemba計算中...</span>
+    </div>
+
+    <div class="sv-seq-wrap hide" id="sv-seq-wrap">
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);margin-bottom:7px;">解法シーケンス — <span id="sv-total">0</span>手（タップでジャンプ）</div>
+      <div class="sv-seq" id="sv-seq"></div>
+    </div>
+
+    <div class="sv-prog-wrap hide" id="sv-prog-wrap">
+      <div class="sv-prog" id="sv-prog" style="width:0%"></div>
+    </div>
+
+    <div class="sv-step hide" id="sv-step">
+      <div class="sv-phase" id="sv-phase"></div>
+      <div class="sv-move-big" id="sv-move-big">R</div>
+      <div class="sv-move-hint" id="sv-move-hint"></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;background:var(--g);color:#000;padding:2px 7px;border-radius:10px;" id="sv-step-num">1/20</div>
+        <div id="sv-ai-ld" class="hide"><div class="ldots"><span></span><span></span><span></span></div></div>
+      </div>
+      <div class="sv-ai-txt" id="sv-ai-txt"></div>
+    </div>
+
+    <div class="sv-fb hide" id="sv-fb">
+      <div class="sfb" id="sfb-ok" onclick="svFB(true)">👍 わかった</div>
+      <div class="sfb" id="sfb-ng" onclick="svFB(false)">🤔 わからない</div>
+    </div>
+
+    <div class="sv-nav hide" id="sv-nav">
+      <button class="sv-prev" id="sv-prev" onclick="svPrev()">←</button>
+      <button class="sv-spk" onclick="svSpeak()">🔊</button>
+      <button class="sv-next" id="sv-next" onclick="svNext()">次の手 →</button>
+    </div>
+
+    <div class="sv-complete hide" id="sv-complete">
+      <div class="sc-icon">🎉</div>
+      <div style="font-size:24px;font-weight:700;color:var(--g);margin-bottom:5px;" id="sc-title">完成！</div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:14px;" id="sc-sub"></div>
+      <div class="sc-grid" id="sc-stats"></div>
+      <button class="btn btnP" onclick="closeSolver();resetAll()" style="max-width:240px;margin:0 auto 8px;">もう一度</button>
+      <button class="btn btnS" onclick="switchTab('learn');closeSolver()" style="max-width:240px;margin:0 auto;">データを見る</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: SOLVE ===== -->
+<div class="scr on" id="s-solve">
+  <div class="hdr">
+    <div class="logo">cub<em>by</em></div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div class="gbadge" id="lbadge">Beginner</div>
+      <button class="bsm bsmD" onclick="openLvModal()" style="font-size:10px;padding:4px 9px;">Level</button>
+    </div>
+  </div>
+
+  <!-- Main action -->
+  <div style="margin:0 12px 10px;display:flex;gap:7px;">
+    <button class="btn btnP" style="flex:1;padding:13px;" onclick="launchAR()">📷 ARスキャン</button>
+    <button class="btn btnP" style="flex:1;padding:13px;" onclick="startSolverFromFaces()">🧠 解法計算</button>
+  </div>
+
+  <!-- Precision panel -->
+  <div class="prec-panel" id="prec-panel" style="display:none;">
+    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);margin-bottom:8px;">COLOR RECOGNITION PRECISION</div>
+    <div id="prec-rows"></div>
+    <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:10px;color:var(--t2);">総合確信度</div>
+      <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;" id="overall-conf">—</div>
+    </div>
+  </div>
+
+  <!-- Manual input -->
+  <div class="card" style="padding:11px 13px;">
+    <div class="ctitle">手動入力</div>
+    <div class="ftabs" id="ftabs"></div>
+  </div>
+  <div style="margin:0 12px 9px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;">
+    <div style="text-align:center;margin-bottom:9px;font-size:12px;color:var(--t2);" id="face-lbl">上面を入力</div>
+    <div class="fgrid" id="fgrid"></div>
+    <div class="swrow" id="swrow"></div>
+    <div style="font-size:11px;color:var(--t3);text-align:center;">色を選んでマスをタップ</div>
+  </div>
+  <div class="card"><div class="ctitle">入力状況</div><div class="amini" id="all-mini"></div></div>
+  <div style="padding:0 12px 10px;display:flex;gap:7px;">
+    <button class="btn btnS" style="flex:1;" onclick="fillDemo()">Demo</button>
+    <button class="btn btnP" style="flex:2;" id="btn-go" onclick="startSolverFromFaces()" disabled>解法計算</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN: TIMER ===== -->
+<div id="s-timer">
+  <div class="hdr"><div style="font-size:16px;font-weight:700;">⏱ タイマー</div><button class="bsm bsmD" onclick="genScramble()" style="font-size:10px;">スクランブル</button></div>
+  <div style="background:var(--s2);border-radius:var(--rsm);padding:10px 13px;margin:0 12px 8px;"><div style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:5px;">SCRAMBLE</div><div style="font-family:'DM Mono',monospace;font-size:12px;line-height:1.6;word-break:break-all;" id="scramble-txt"></div></div>
+  <div style="background:var(--s1);border:1px solid rgba(255,184,48,.18);border-radius:var(--r);padding:12px;margin:0 12px 8px;">
+    <div style="font-size:10px;color:var(--amber);font-family:'DM Mono',monospace;margin-bottom:6px;">🏆 世界記録</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:11px;color:var(--t2);">3×3 WR (Max Park)</div><div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--amber);">3.13s</div></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:11px;color:var(--t2);">子ども目標</div><div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--amber);">&lt; 60s</div></div>
+    <div style="display:flex;justify-content:space-between;"><div style="font-size:11px;color:var(--t2);">17×17 ギネス目標</div><div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--amber);">&lt; 30min</div></div>
+  </div>
+  <div style="text-align:center;padding:4px 12px 0;">
+    <div style="font-size:11px;color:var(--t2);font-family:'DM Mono',monospace;margin-bottom:2px;" id="timer-status">準備完了</div>
+    <div class="timer-display" id="timer-display"><span id="t-min">0</span>:<span id="t-sec">00</span>.<span class="timer-ms" id="t-ms">000</span></div>
+  </div>
+  <div style="display:flex;gap:9px;padding:0 12px 9px;">
+    <button style="flex:2;padding:16px;border-radius:var(--r);border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;background:var(--g);color:#000;" id="t-btn" onclick="timerAction()">スタート</button>
+    <button style="flex:1;padding:16px;border-radius:var(--r);background:var(--s2);border:1px solid var(--b2);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;" onclick="timerReset()">リセット</button>
+  </div>
+  <div style="background:linear-gradient(135deg,rgba(0,214,143,.13),rgba(0,168,107,.06));border:1px solid rgba(0,214,143,.25);border-radius:var(--r);padding:12px;margin:0 12px 8px;text-align:center;" id="pb-banner" style="display:none;">
+    <div style="font-size:10px;color:var(--g);font-family:'DM Mono',monospace;margin-bottom:3px;">PERSONAL BEST</div>
+    <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--g);" id="pb-time">—</div>
+  </div>
+  <div class="card"><div class="ctitle">記録一覧</div><div id="record-list"></div></div>
+</div>
+
+<!-- ===== SCREEN: LEARN ===== -->
+<div class="scr" id="s-learn">
+  <div class="hdr"><div style="font-size:16px;font-weight:700;">学習データ</div><button class="bsm bsmD" onclick="exportData()" style="font-size:10px;">Export</button></div>
+  <div class="card"><div class="ctitle">統計</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+      <div style="background:var(--s2);border-radius:var(--rsm);padding:10px;text-align:center;"><div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;" id="st-total">0</div><div style="font-size:10px;color:var(--t2);margin-top:2px;">総パターン</div></div>
+      <div style="background:var(--s2);border-radius:var(--rsm);padding:10px;text-align:center;"><div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;" id="st-solved">0</div><div style="font-size:10px;color:var(--t2);margin-top:2px;">解決済み</div></div>
+      <div style="background:var(--s2);border-radius:var(--rsm);padding:10px;text-align:center;"><div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;" id="st-avg">—</div><div style="font-size:10px;color:var(--t2);margin-top:2px;">平均手数</div></div>
+    </div>
+    <div style="margin-top:9px;"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t2);margin-bottom:2px;"><span>目標 10,000 patterns</span><span id="st-pct">0%</span></div><div style="background:var(--s2);border-radius:20px;height:5px;overflow:hidden;"><div style="height:100%;background:var(--g);border-radius:20px;transition:width .5s;" id="pbar" style="width:0%"></div></div></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">ステップ別 つまずき率</div>
+    <div style="display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin-top:5px;" id="hmap"></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;"><div class="ctitle" style="margin-bottom:0;">記録済みパターン</div><button class="bsm bsmD" onclick="clearData()" style="font-size:10px;padding:3px 8px;">全削除</button></div>
+    <div id="plist"></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: SETTINGS ===== -->
+<div class="scr" id="s-settings">
+  <div class="hdr" style="margin-bottom:10px;"><div style="font-size:16px;font-weight:700;">設定</div></div>
+  <div class="card">
+    <div class="ctitle">Groq API Key</div>
+    <input class="inp" id="api-inp" type="password" placeholder="gsk_..." autocomplete="off" style="margin-bottom:7px;">
+    <div style="display:flex;gap:7px;"><button class="bsm bsmG" onclick="saveKey()" style="flex:1;">保存</button><a href="https://console.groq.com" target="_blank" style="flex:1;"><button class="bsm bsmD" style="width:100%;">無料取得 →</button></a></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Supabase</div>
+    <input class="inp" id="sb-url" type="text" placeholder="https://xxx.supabase.co" style="margin-bottom:6px;" autocomplete="off">
+    <input class="inp" id="sb-key" type="password" placeholder="anon key..." style="margin-bottom:7px;" autocomplete="off">
+    <button class="bsm bsmG" onclick="saveSupabase()" style="width:100%;">接続</button>
+  </div>
+  <div style="padding:0 12px 20px;text-align:center;font-size:10px;color:var(--t3);">Cubby v9.0 — Made in Japan 🇯🇵</div>
+</div>
+
+<!-- LEVEL MODAL -->
+<div style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:12px;" id="lv-modal" class="hide">
+  <div style="background:var(--s1);border-radius:var(--r) var(--r) 0 0;padding:20px 16px 24px;width:100%;max-width:480px;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:12px;">レベル選択</div>
+    <div id="lv-cards"></div>
+    <button class="btn btnS" onclick="closeLvModal()" style="margin-top:6px;">閉じる</button>
+  </div>
+</div>
+
+<div class="insp-overlay hide" id="insp-overlay" onclick="inspTap()">
+  <div class="insp-num" id="insp-num">15</div>
+  <div style="font-size:14px;color:var(--t2);margin-top:6px;">インスペクション</div>
+  <div style="font-size:12px;color:var(--t3);margin-top:20px;">タップしてスタート</div>
+</div>
+
+<div class="nav">
+  <button class="nb on" id="nb-solve" onclick="switchTab('solve')"><div class="ni">🧩</div>解く</button>
+  <button class="nb" id="nb-timer" onclick="switchTab('timer')"><div class="ni">⏱</div>タイマー</button>
+  <button class="nb" id="nb-learn" onclick="switchTab('learn')"><div class="ni">📊</div>データ</button>
+  <button class="nb" id="nb-settings" onclick="switchTab('settings')"><div class="ni">⚙️</div>設定</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ================================================================
+// ① HSV + LAB HYBRID COLOR CLASSIFIER
+// ================================================================
+function rgbToHsv(r,g,b){
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+  let h=0,s=max===0?0:d/max,v=max;
+  if(d!==0){
+    switch(max){
+      case r:h=((g-b)/d+(g<b?6:0))/6;break;
+      case g:h=((b-r)/d+2)/6;break;
+      case b:h=((r-g)/d+4)/6;break;
+    }
+  }
+  return{h:h*360,s,v};
+}
+
+function rgbToLab(r,g,b){
+  let R=r/255,G=g/255,B=b/255;
+  R=R>0.04045?Math.pow((R+0.055)/1.055,2.4):R/12.92;
+  G=G>0.04045?Math.pow((G+0.055)/1.055,2.4):G/12.92;
+  B=B>0.04045?Math.pow((B+0.055)/1.055,2.4):B/12.92;
+  let X=(R*0.4124+G*0.3576+B*0.1805)/0.95047;
+  let Y=(R*0.2126+G*0.7152+B*0.0722)/1.00000;
+  let Z=(R*0.0193+G*0.1192+B*0.9505)/1.08883;
+  const f=v=>v>0.008856?Math.pow(v,1/3):(7.787*v+16/116);
+  return[116*f(Y)-16,500*(f(X)-f(Y)),200*(f(Y)-f(Z))];
+}
+
+// HSV-based primary classification (fast, illumination-robust for saturation)
+function hsvClassify(r,g,b){
+  const{h,s,v}=rgbToHsv(r,g,b);
+  // White: low saturation, high value
+  if(s<0.15&&v>0.75)return{color:'W',conf:0.9-s};
+  // Yellow: hue 40-75, medium-high sat
+  if(h>=38&&h<=78&&s>0.35)return{color:'Y',conf:Math.min(1,s*1.5)};
+  // Red: hue 0-18 or 340-360
+  if((h<=18||h>=342)&&s>0.4)return{color:'R',conf:Math.min(1,s*1.4)};
+  // Orange: hue 18-38
+  if(h>18&&h<38&&s>0.4)return{color:'O',conf:Math.min(1,s*1.3)};
+  // Green: hue 100-160
+  if(h>=100&&h<=160&&s>0.3)return{color:'G',conf:Math.min(1,s*1.3)};
+  // Blue: hue 200-260
+  if(h>=195&&h<=265&&s>0.3)return{color:'B',conf:Math.min(1,s*1.3)};
+  return null;
+}
+
+// LAB-based secondary classification (accurate under known lighting)
+function labClassify(r,g,b,calibration){
+  const refs=calibration||{
+    W:{r:255,g:255,b:255},Y:{r:255,g:210,b:0},
+    R:{r:215,g:45,b:35}, O:{r:255,g:125,b:0},
+    B:{r:25,g:90,b:210}, G:{r:15,g:155,b:55}
+  };
+  const[L,A,B_]=rgbToLab(r,g,b);
+  let best='W',bestD=Infinity;
+  Object.entries(refs).forEach(([k,rv])=>{
+    const[rl,ra,rb]=rgbToLab(rv.r,rv.g,rv.b);
+    const d=Math.sqrt((L-rl)**2+(A-ra)**2+(B_-rb)**2);
+    if(d<bestD){bestD=d;best=k;}
+  });
+  const conf=Math.max(0,Math.min(1,1-bestD/70));
+  return{color:best,conf};
+}
+
+// ② HYBRID: HSV primary filter → LAB precision
+function classifyPixel(r,g,b,calibration){
+  const hsvResult=hsvClassify(r,g,b);
+  const labResult=labClassify(r,g,b,calibration);
+
+  if(hsvResult&&hsvResult.conf>0.65){
+    // HSV confident: use it, but cross-check with LAB
+    if(hsvResult.color===labResult.color){
+      return{color:hsvResult.color,conf:Math.min(1,(hsvResult.conf+labResult.conf)/2+0.1)};
+    }
+    // Disagreement: use whichever has higher confidence
+    return hsvResult.conf>labResult.conf?hsvResult:labResult;
+  }
+  // Low HSV confidence: trust LAB
+  return labResult;
+}
+
+// ================================================================
+// ② AUTOMATIC WHITE BALANCE CORRECTION
+// ================================================================
+let wbEnabled=true;
+let wbGrayWorld={r:1,g:1,b:1};
+
+function computeWhiteBalance(ctx,w,h){
+  // Gray World assumption: average of all pixels should be neutral gray
+  const step=8; // sample every 8th pixel for speed
+  let sumR=0,sumG=0,sumB=0,n=0;
+  const d=ctx.getImageData(0,0,w,h).data;
+  for(let i=0;i<d.length;i+=4*step){sumR+=d[i];sumG+=d[i+1];sumB+=d[i+2];n++;}
+  const avg=(sumR+sumG+sumB)/(3*n);
+  wbGrayWorld={
+    r:avg/(sumR/n||1),
+    g:avg/(sumG/n||1),
+    b:avg/(sumB/n||1)
+  };
+}
+
+function applyWB(r,g,b){
+  if(!wbEnabled)return[r,g,b];
+  return[
+    Math.min(255,Math.round(r*wbGrayWorld.r)),
+    Math.min(255,Math.round(g*wbGrayWorld.g)),
+    Math.min(255,Math.round(b*wbGrayWorld.b))
+  ];
+}
+
+function toggleWB(){
+  wbEnabled=!wbEnabled;
+  document.getElementById('wb-btn').textContent=`⚖️ WB: ${wbEnabled?'AUTO':'OFF'}`;
+  showToast(`ホワイトバランス: ${wbEnabled?'自動補正ON':'OFF'}`);
+}
+
+// ================================================================
+// ③ WEIGHTED FRAME VOTING (Confidence-Weighted Temporal Smoothing)
+// ================================================================
+// Each entry: {colors:[9], confidences:[9]}
+const FRAME_HISTORY_MAX=6;
+let frameHistory={}; // {faceKey: [{colors,confidences}]}
+
+function weightedVote(faceKey,newColors,newConfs){
+  if(!frameHistory[faceKey])frameHistory[faceKey]=[];
+  frameHistory[faceKey].push({colors:newColors,confidences:newConfs});
+  if(frameHistory[faceKey].length>FRAME_HISTORY_MAX)frameHistory[faceKey].shift();
+
+  const frames=frameHistory[faceKey];
+  return Array.from({length:9},(_,i)=>{
+    // Weighted vote per cell
+    const votes={};
+    frames.forEach(f=>{
+      const c=f.colors[i],conf=f.confidences[i]||0.5;
+      votes[c]=(votes[c]||0)+conf; // weight by confidence
+    });
+    // Return color with highest weighted vote
+    return Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0];
+  });
+}
+
+// ================================================================
+// ④ EDGE DETECTION: Auto-detect 3×3 grid boundaries
+// ================================================================
+function detectCubeGrid(ctx,w,h){
+  // Sobel edge detection on center region
+  const cx=Math.floor(w/2),cy=Math.floor(h/2);
+  const sz=Math.floor(Math.min(w,h)*0.55);
+  const ox=cx-sz/2,oy=cy-sz/2;
+
+  // Sample rows/cols for edge concentration
+  const rowEdges=[];const colEdges=[];
+
+  for(let y=0;y<sz;y+=4){
+    let edgeSum=0;
+    for(let x=4;x<sz-4;x+=4){
+      const px1=ctx.getImageData(ox+x-4,oy+y,1,1).data;
+      const px2=ctx.getImageData(ox+x+4,oy+y,1,1).data;
+      const diff=Math.abs(px1[0]-px2[0])+Math.abs(px1[1]-px2[1])+Math.abs(px1[2]-px2[2]);
+      edgeSum+=diff;
+    }
+    rowEdges.push({y,e:edgeSum});
+  }
+
+  for(let x=0;x<sz;x+=4){
+    let edgeSum=0;
+    for(let y=4;y<sz-4;y+=4){
+      const px1=ctx.getImageData(ox+x,oy+y-4,1,1).data;
+      const px2=ctx.getImageData(ox+x,oy+y+4,1,1).data;
+      const diff=Math.abs(px1[0]-px2[0])+Math.abs(px1[1]-px2[1])+Math.abs(px1[2]-px2[2]);
+      edgeSum+=diff;
+    }
+    colEdges.push({x,e:edgeSum});
+  }
+
+  // Find 2 strongest horizontal edges (dividing 3 rows)
+  const sortedRows=[...rowEdges].sort((a,b)=>b.e-a.e);
+  const sortedCols=[...colEdges].sort((a,b)=>b.e-a.e);
+
+  // Extract top 2 dividing lines (excluding borders)
+  const margin=sz*0.1;
+  const rowDividers=sortedRows.filter(r=>r.y>margin&&r.y<sz-margin).slice(0,2).map(r=>r.y).sort((a,b)=>a-b);
+  const colDividers=sortedCols.filter(c=>c.x>margin&&c.x<sz-margin).slice(0,2).map(c=>c.x).sort((a,b)=>a-b);
+
+  // If we found exactly 2 dividers, use them; otherwise use uniform grid
+  if(rowDividers.length===2&&colDividers.length===2){
+    // Build adaptive sampling points
+    const rowBounds=[0,...rowDividers,sz];
+    const colBounds=[0,...colDividers,sz];
+    const points=[];
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+      points.push({
+        x:ox+Math.round((colBounds[c]+colBounds[c+1])/2),
+        y:oy+Math.round((rowBounds[r]+rowBounds[r+1])/2)
+      });
+    }
+    return{points,adaptive:true,sz};
+  }
+
+  // Fallback: uniform 3×3
+  return{points:Array.from({length:9},(_,idx)=>{
+    const r=Math.floor(idx/3),c=idx%3;
+    return{x:Math.round(ox+c*(sz/3)+sz/6),y:Math.round(oy+r*(sz/3)+sz/6)};
+  }),adaptive:false,sz};
+}
+
+// ================================================================
+// ⑤ ENHANCED SAMPLING with multi-point average
+// ================================================================
+function sampleCell(ctx,cx,cy,radius,w,h){
+  // Sample 9 points in a cross pattern
+  const offsets=[
+    {x:0,y:0},{x:-radius,y:0},{x:radius,y:0},{x:0,y:-radius},{x:0,y:radius},
+    {x:-radius*.6,y:-radius*.6},{x:radius*.6,y:-radius*.6},
+    {x:-radius*.6,y:radius*.6},{x:radius*.6,y:radius*.6}
+  ];
+  let sr=0,sg=0,sb=0,n=0;
+  offsets.forEach(({x,y})=>{
+    const px=Math.max(1,Math.min(w-2,Math.round(cx+x)));
+    const py=Math.max(1,Math.min(h-2,Math.round(cy+y)));
+    const d=ctx.getImageData(px-1,py-1,3,3).data;
+    let lr=0,lg=0,lb=0,ln=0;
+    for(let i=0;i<d.length;i+=4){lr+=d[i];lg+=d[i+1];lb+=d[i+2];ln++;}
+    sr+=lr/ln;sg+=lg/ln;sb+=lb/ln;n++;
+  });
+  return{r:sr/n,g:sg/n,b:sb/n};
+}
+
+// MAIN: Full precision scan of one frame
+function scanFramePrecision(ctx,w,h,faceKey,calibration){
+  // Step 1: White balance
+  computeWhiteBalance(ctx,w,h);
+
+  // Step 2: Detect grid boundaries
+  const grid=detectCubeGrid(ctx,w,h);
+  const radius=Math.floor(grid.sz/12);
+
+  const colors=[],confidences=[];
+  const debugColors=[];
+
+  grid.points.forEach(({x,y},i)=>{
+    // Step 3: Multi-point sampling
+    const{r:rawR,g:rawG,b:rawB}=sampleCell(ctx,x,y,radius,w,h);
+    // Step 4: White balance correction
+    const[r,g,b]=applyWB(rawR,rawG,rawB);
+    // Step 5: Hybrid HSV+LAB classification
+    const result=classifyPixel(r,g,b,calibration);
+    colors.push(result.color);
+    confidences.push(result.conf);
+    debugColors.push({r:Math.round(r),g:Math.round(g),b:Math.round(b),color:result.color,conf:result.conf});
+  });
+
+  // Step 6: Weighted temporal voting
+  const smoothed=weightedVote(faceKey,colors,confidences);
+  const avgConf=confidences.reduce((s,c)=>s+c,0)/9;
+
+  return{
+    colors:smoothed,
+    rawColors:colors,
+    confidences,
+    avgConf,
+    adaptive:grid.adaptive,
+    debugColors,
+    points:grid.points
+  };
+}
+
+// ================================================================
+// KOCIEMBA TWO-PHASE SOLVER (JavaScript implementation)
+// ================================================================
+const Kociemba=(()=>{
+  const MN=['U','R','F','D','L','B'];
+  const MD=["","'","2"];
+
+  // Move tables as coordinate transformations
+  // Corner twist: how each move affects twist coordinate
+  const CT_MOVE=[
+    [0,0,0,0,0,0,0,0], // U
+    [2,0,0,1,1,0,0,2], // R
+    [0,1,2,0,2,1,0,0], // F
+    [0,0,0,0,0,0,0,0], // D
+    [1,2,0,0,0,2,1,0], // L
+    [1,0,0,2,0,0,2,1], // B
+  ];
+  const CP_MOVE=[
+    [3,0,1,2,4,5,6,7], // U
+    [4,1,2,0,7,5,6,3], // R
+    [0,5,1,3,2,4,6,7], // F
+    [0,1,2,3,5,6,7,4], // D
+    [1,6,2,3,4,0,5,7], // L
+    [7,1,2,6,4,5,3,0], // B
+  ];
+  const EP_MOVE=[
+    [3,0,1,2,4,5,6,7,8,9,10,11],   // U
+    [11,1,2,3,8,5,6,7,4,9,10,0],   // R
+    [0,9,2,3,4,8,6,7,1,5,10,11],   // F
+    [0,1,2,3,5,6,7,4,8,9,10,11],   // D
+    [0,1,10,3,4,5,9,7,8,2,6,11],   // L
+    [0,1,2,11,4,5,6,10,8,9,3,7],   // B
+  ];
+  const EO_MOVE=[
+    [0,0,0,0,0,0,0,0,0,0,0,0], // U
+    [0,0,0,0,0,0,0,0,0,0,0,0], // R
+    [0,1,0,0,0,1,0,0,1,1,0,0], // F
+    [0,0,0,0,0,0,0,0,0,0,0,0], // D
+    [0,0,0,0,0,0,0,0,0,0,0,0], // L
+    [0,0,1,1,0,0,1,1,0,0,0,0], // B
+  ];
+
+  function newCube(){return{cp:[0,1,2,3,4,5,6,7],co:[0,0,0,0,0,0,0,0],ep:[0,1,2,3,4,5,6,7,8,9,10,11],eo:[0,0,0,0,0,0,0,0,0,0,0,0]};}
+  function clone(c){return{cp:[...c.cp],co:[...c.co],ep:[...c.ep],eo:[...c.eo]};}
+
+  function applyMove(c,m){
+    const nc=clone(c);
+    const tcp=[...c.cp],tco=[...c.co],tep=[...c.ep],teo=[...c.eo];
+    const cp=CP_MOVE[m],ct=CT_MOVE[m],ep=EP_MOVE[m],eo=EO_MOVE[m];
+    for(let i=0;i<8;i++){nc.cp[i]=tcp[cp[i]];nc.co[i]=(tco[cp[i]]+ct[i])%3;}
+    for(let i=0;i<12;i++){nc.ep[i]=tep[ep[i]];nc.eo[i]=(teo[ep[i]]+eo[i])%2;}
+    return nc;
+  }
+
+  function applyMoves(c,moves){let cur=clone(c);for(const m of moves)cur=applyMove(cur,m);return cur;}
+
+  // Coordinates
+  function twist(c){let t=0;for(let i=0;i<7;i++)t=3*t+c.co[i];return t;}
+  function flip(c){let f=0;for(let i=0;i<11;i++)f=2*f+c.eo[i];return f;}
+  function slice_(c){let s=0,x=0;for(let j=11;j>=0;j--){if(c.ep[j]>=8)s+=comb(11-j,x+1);x+=(c.ep[j]>=8)?1:0;}return s;}
+  function comb(n,k){if(k>n||k<0)return 0;if(k===0||k===n)return 1;let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return Math.round(r);}
+
+  function isSolved(c){
+    for(let i=0;i<8;i++)if(c.cp[i]!==i||c.co[i]!==0)return false;
+    for(let i=0;i<12;i++)if(c.ep[i]!==i||c.eo[i]!==0)return false;
+    return true;
+  }
+  function isG1(c){return twist(c)===0&&flip(c)===0&&slice_(c)===0;}
+
+  // Pruning heuristic
+  function h1(c){
+    let t=0;
+    if(twist(c)!==0)t++;
+    if(flip(c)!==0)t++;
+    if(slice_(c)!==0)t++;
+    return Math.ceil(t/3);
+  }
+  function h2(c){
+    return isSolved(c)?0:1;
+  }
+
+  let found=false;let solution=[];
+
+  function idaSearch(c,depth,maxD,lastFace,phase){
+    if(phase===1&&isG1(c)){
+      if(depth===0){
+        const saved=[...solution];
+        if(idaSearch(clone(c),0,maxD-solution.length,-1,2))return true;
+        solution=saved;return false;
+      }
+    }
+    if(phase===2&&isSolved(c)){found=true;return true;}
+    if(depth===0)return false;
+
+    const h=phase===1?h1(c):h2(c);
+    if(h>depth)return false;
+
+    for(let m=0;m<6;m++){
+      if(m===lastFace)continue;
+      if(phase===1&&m===lastFace-3)continue;
+      if(phase===1&&m+3===lastFace)continue;
+      // Phase 2: restrict moves
+      if(phase===2&&(m===2||m===5))continue; // no F,B
+      const maxPow=phase===2&&(m===1||m===4)?2:3; // R,L: max 2 in phase 2 (only R2,L2)
+      for(let p=1;p<=maxPow;p++){
+        if(phase===2&&(m===1||m===4)&&p!==2)continue;
+        let nc=clone(c);
+        for(let k=0;k<p;k++)nc=applyMove(nc,m);
+        solution.push(m*3+(p-1));
+        if(idaSearch(nc,depth-1,maxD,m,phase))return true;
+        solution.pop();
+      }
+    }
+    return false;
+  }
+
+  function solveCubie(c){
+    found=false;solution=[];
+    if(isSolved(c))return[];
+    for(let maxD=0;maxD<=22&&!found;maxD++){
+      solution=[];found=false;
+      idaSearch(clone(c),maxD,maxD,-1,1);
+    }
+    return solution.map(idx=>{const f=Math.floor(idx/3),p=(idx%3)+1;return MN[f]+(p===2?'2':p===3?"'":"");});
+  }
+
+  // Convert face data to cubie representation
+  function facesToCubie(faces){
+    const c=newCube();
+    // Center colors determine face mapping
+    const fc={
+      top:faces.top[4],front:faces.front[4],right:faces.right[4],
+      left:faces.left[4],back:faces.back[4],bottom:faces.bottom[4]
+    };
+    // Map color to face index: U=0,R=1,F=2,D=3,L=4,B=5
+    const colFace={};
+    colFace[fc.top]=0;colFace[fc.right]=1;colFace[fc.front]=2;
+    colFace[fc.bottom]=3;colFace[fc.left]=4;colFace[fc.back]=5;
+
+    // Corner facelets [URF,UFL,ULB,UBR,DFR,DLF,DBL,DRB]
+    // Each corner: 3 facelets in U/D, R/L, F/B order
+    const cornerFacelets=[
+      [{f:'top',i:8},{f:'right',i:0},{f:'front',i:2}],  // URF
+      [{f:'top',i:6},{f:'front',i:0},{f:'left',i:2}],   // UFL
+      [{f:'top',i:0},{f:'left',i:0},{f:'back',i:2}],    // ULB
+      [{f:'top',i:2},{f:'back',i:0},{f:'right',i:2}],   // UBR
+      [{f:'bottom',i:2},{f:'front',i:8},{f:'right',i:6}],// DFR
+      [{f:'bottom',i:0},{f:'left',i:8},{f:'front',i:6}], // DLF
+      [{f:'bottom',i:6},{f:'back',i:8},{f:'left',i:6}],  // DBL
+      [{f:'bottom',i:8},{f:'right',i:8},{f:'back',i:6}], // DRB
+    ];
+    const cornerDef=[
+      [0,1,2],[0,2,4],[0,4,5],[0,5,1],
+      [3,2,1],[3,4,2],[3,5,4],[3,1,5]
+    ];
+
+    for(let i=0;i<8;i++){
+      const facelets=cornerFacelets[i];
+      const faceCols=facelets.map(({f,i:idx})=>colFace[faces[f]?.[idx]]);
+      const def=cornerDef[i];
+      // Find which canonical corner this matches
+      let found=-1,ori=0;
+      for(let j=0;j<8;j++){
+        const cdef=cornerDef[j];
+        for(let o=0;o<3;o++){
+          if(faceCols[0]===cdef[o%3]&&faceCols[1]===cdef[(o+1)%3]&&faceCols[2]===cdef[(o+2)%3]){
+            found=j;ori=o;break;
+          }
+        }
+        if(found>=0)break;
+      }
+      if(found>=0){c.cp[i]=found;c.co[i]=ori;}
+    }
+
+    // Edge facelets [UR,UF,UL,UB,DR,DF,DL,DB,FR,FL,BL,BR]
+    const edgeFacelets=[
+      [{f:'top',i:5},{f:'right',i:1}],    // UR
+      [{f:'top',i:7},{f:'front',i:1}],    // UF
+      [{f:'top',i:3},{f:'left',i:1}],     // UL
+      [{f:'top',i:1},{f:'back',i:1}],     // UB
+      [{f:'bottom',i:5},{f:'right',i:7}], // DR
+      [{f:'bottom',i:1},{f:'front',i:7}], // DF
+      [{f:'bottom',i:3},{f:'left',i:7}],  // DL
+      [{f:'bottom',i:7},{f:'back',i:7}],  // DB
+      [{f:'front',i:5},{f:'right',i:3}],  // FR
+      [{f:'front',i:3},{f:'left',i:5}],   // FL
+      [{f:'back',i:5},{f:'left',i:3}],    // BL
+      [{f:'back',i:3},{f:'right',i:5}],   // BR
+    ];
+    const edgeDef=[
+      [0,1],[0,2],[0,4],[0,5],
+      [3,1],[3,2],[3,4],[3,5],
+      [2,1],[2,4],[5,4],[5,1]
+    ];
+
+    for(let i=0;i<12;i++){
+      const facelets=edgeFacelets[i];
+      const faceCols=facelets.map(({f,i:idx})=>colFace[faces[f]?.[idx]]);
+      let found2=-1,ori=0;
+      for(let j=0;j<12;j++){
+        const edef=edgeDef[j];
+        if(faceCols[0]===edef[0]&&faceCols[1]===edef[1]){found2=j;ori=0;break;}
+        if(faceCols[0]===edef[1]&&faceCols[1]===edef[0]){found2=j;ori=1;break;}
+      }
+      if(found2>=0){c.ep[i]=found2;c.eo[i]=ori;}
+    }
+    return c;
+  }
+
+  return{
+    solve(faces){
+      try{
+        const c=facesToCubie(faces);
+        const moves=solveCubie(c);
+        return{ok:true,moves};
+      }catch(e){
+        return{ok:false,error:e.message||'Solve error'};
+      }
+    }
+  };
+})();
+
+// ================================================================
+// MOVE HINTS
+// ================================================================
+const MOVE_HINTS={
+  'U':'上の面を時計回りに回す',"U'":'上の面を反時計回りに回す','U2':'上の面を180度回す',
+  'R':'右の面を上に向かって回す',"R'":'右の面を下に向かって回す','R2':'右の面を180度回す',
+  'F':'前の面を時計回りに回す',"F'":'前の面を反時計回りに回す','F2':'前の面を180度回す',
+  'D':'下の面を時計回りに回す',"D'":'下の面を反時計回りに回す','D2':'下の面を180度回す',
+  'L':'左の面を上に向かって回す',"L'":'左の面を下に向かって回す','L2':'左の面を180度回す',
+  'B':'後ろの面を時計回りに回す',"B'":'後ろの面を反時計回りに回す','B2':'後ろの面を180度回す',
+};
+
+function getPhaseLabel(i,total){
+  const p=i/total;
+  if(p<0.25)return'フェーズ1: クロス構築';
+  if(p<0.5)return'フェーズ2: F2L（1〜2層）';
+  if(p<0.75)return'フェーズ3: OLL（黄色面）';
+  return'フェーズ4: PLL（最終調整）';
+}
+
+// ================================================================
+// STATE
+// ================================================================
+const FK=['top','front','right','left','back','bottom'];
+const FL=['上面','前面','右面','左面','後面','下面'];
+const CH={W:'#ffffff',Y:'#FFD700',R:'#E8413A',O:'#FF8C00',B:'#2563EB',G:'#16A34A'};
+
+let level=+(localStorage.getItem('cubby_level')||0);
+let apiKey=localStorage.getItem('cubby_key')||'';
+let sbUrl=localStorage.getItem('cubby_sb_url')||'';
+let sbKey=localStorage.getItem('cubby_sb_key')||'';
+let faces={};
+let selColor='W';
+let editCell=-1;
+let curFace=0;
+let db=null;
+let camStream=null;
+let animId=null;
+let arPhase='scan'; // 'scan'|'guide'
+let arCurFace=0;
+let arScanned={};
+let arPrecision={};
+let calibration=JSON.parse(localStorage.getItem('cubby_calib')||'null');
+let arrowPhase=0;
+
+// Solver state
+let svMoves=[];
+let svIndex=0;
+let svFbMap={};
+let svSessId=null;
+let svStart=null;
+
+// Timer
+let timerState='idle',timerStart=0,timerElapsed=0,timerRaf=null,inspInterval=null,inspSeconds=15;
+let timerRecords=JSON.parse(localStorage.getItem('cubby_records')||'[]');
+
+// AR step guide state
+let arCurStep=0;
+let arFbMap={};
+const AR_STEPS=[
+  {t:'センターを確認',b:'白いセンターが上になるよう持ちましょう。真ん中のマスは動きません。',a:null},
+  {t:'白い十字',b:'上面に白いエッジを4枚集めて十字を作ります。',a:"F U R U'"},
+  {t:'第一層コーナー',b:'白いコーナーを正しい位置に入れます。',a:"R U R' U'"},
+  {t:'中段エッジ',b:'黄色のないエッジを中段に入れます。',a:"U R U' R' U' F' U F"},
+  {t:'黄色十字',b:'上面に黄色い十字を作ります。',a:"F R U R' U' F'"},
+  {t:'黄色エッジ',b:'十字の4辺を正しい面に合わせます。',a:"R U R' U R U2 R'"},
+  {t:'コーナー位置',b:'4つのコーナーを正しい位置に移動します。',a:"U R U' L' U R' U' L"},
+  {t:'コーナー向き',b:'各コーナーの向きを揃えれば完成！',a:"R' D' R D"},
+];
+
+// ================================================================
+// INDEXEDDB
+// ================================================================
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('cubby9',1);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('p'))d.createObjectStore('p',{keyPath:'id',autoIncrement:true});};r.onsuccess=e=>{db=e.target.result;res(db);};r.onerror=()=>rej(r.error);});}
+async function dbSave(rec){if(!db)await openDB();return new Promise((res,rej)=>{const tx=db.transaction('p','readwrite');const r=tx.objectStore('p').add(rec);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function dbAll(){if(!db)await openDB();return new Promise((res,rej)=>{const tx=db.transaction('p','readonly');const r=tx.objectStore('p').getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function dbClear(){if(!db)await openDB();return new Promise((res,rej)=>{const tx=db.transaction('p','readwrite');const r=tx.objectStore('p').clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+
+// ================================================================
+// VALIDATION
+// ================================================================
+function validateCube(f){
+  const errors=[],counts={W:0,Y:0,R:0,O:0,B:0,G:0};
+  FK.forEach(k=>{
+    if(!f[k]||!f[k].every(c=>c)){errors.push(`${FL[FK.indexOf(k)]}が未入力`);return;}
+    f[k].forEach(c=>{if(counts[c]!==undefined)counts[c]++;});
+  });
+  if(errors.length)return{ok:false,errors};
+  Object.entries(counts).forEach(([c,n])=>{if(n!==9)errors.push(`${c}色のピース: ${n}個（9個必要）`);});
+  const cs=FK.map(k=>f[k]?.[4]).filter(Boolean);
+  if(new Set(cs).size!==6)errors.push('センターピースの色が重複しています');
+  return{ok:errors.length===0,errors};
+}
+
+// ================================================================
+// AR CAMERA
+// ================================================================
+async function launchAR(){
+  arPhase='scan';arCurFace=0;arScanned={};arPrecision={};frameHistory={};
+  document.getElementById('ar-screen').classList.add('on');
+  document.getElementById('ar-scan-ui').style.display='block';
+  document.getElementById('ar-guide-ui').style.display='none';
+  document.getElementById('ar-guide-btn').style.display='none';
+  renderArFtabs();
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}}});
+    const v=document.getElementById('ar-video');v.srcObject=camStream;
+    await new Promise(r=>{v.onloadedmetadata=r;});
+    await v.play().catch(()=>{});
+  }catch(e){showToast('カメラを使用できません',true);closeAR();return;}
+  setupCanvas();startARLoop();
+}
+
+function closeAR(){
+  stopStream();
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  document.getElementById('ar-screen').classList.remove('on');
+  if(Object.keys(arScanned).length>0){
+    FK.forEach(k=>{if(arScanned[k])faces[k]=[...arScanned[k]];});
+    renderFaceTabs();renderFaceGrid();renderAllMini();checkStartable();
+    showPrecisionPanel();
+    showToast(`${Object.keys(arScanned).length}面スキャン完了`);
+  }
+}
+function stopStream(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}}
+
+function setupCanvas(){
+  const c=document.getElementById('ar-canvas');
+  function resize(){c.width=window.innerWidth;c.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+}
+
+// AR draw loop
+function startARLoop(){
+  function loop(){
+    animId=requestAnimationFrame(loop);
+    arrowPhase=(arrowPhase+0.05)%(Math.PI*2);
+    const canvas=document.getElementById('ar-canvas');
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(arPhase==='scan')drawARScanOverlay(ctx,canvas);
+    else draw3DGuideAR(ctx,canvas);
+  }
+  loop();
+}
+
+function drawARScanOverlay(ctx,canvas){
+  const cx=canvas.width/2,cy=canvas.height*.42;
+  const sz=Math.min(canvas.width*.62,230),cell=sz/3;
+  const ox=cx-sz/2,oy=cy-sz/2;
+
+  // Draw current scanned colors
+  const face=arScanned[FK[arCurFace]];
+  if(face){
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+      const col=face[r*3+c];
+      const conf=arPrecision[FK[arCurFace]]?.confidences[r*3+c]||0;
+      ctx.save();
+      ctx.globalAlpha=0.35+conf*0.3;
+      ctx.fillStyle=CH[col]||'#888';
+      rrect(ctx,ox+c*cell+3,oy+r*cell+3,cell-6,cell-6,6);
+      ctx.fill();
+      // Confidence ring
+      ctx.globalAlpha=conf;
+      ctx.strokeStyle=conf>0.7?'rgba(0,214,143,.8)':'rgba(255,184,48,.6)';
+      ctx.lineWidth=1.5;
+      rrect(ctx,ox+c*cell+3,oy+r*cell+3,cell-6,cell-6,6);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Live sample dots from video
+  const v=document.getElementById('ar-video');
+  if(v.readyState>=2){
+    const tmp=document.createElement('canvas');
+    tmp.width=Math.min(v.videoWidth,480);tmp.height=Math.min(v.videoHeight,360);
+    const tc=tmp.getContext('2d');tc.drawImage(v,0,0,tmp.width,tmp.height);
+    computeWhiteBalance(tc,tmp.width,tmp.height);
+    const grid=detectCubeGrid(tc,tmp.width,tmp.height);
+    const scaleX=canvas.width/tmp.width,scaleY=canvas.height/tmp.height;
+
+    // Update debug panel
+    const dbg=document.getElementById('color-debug');
+    dbg.innerHTML='';
+    grid.points.forEach(({x,y},i)=>{
+      const{r:rawR,g:rawG,b:rawB}=sampleCell(tc,x,y,5,tmp.width,tmp.height);
+      const[r,g,b]=applyWB(rawR,rawG,rawB);
+      const res=classifyPixel(r,g,b,calibration);
+      const el=document.createElement('div');
+      el.className='cd-cell';
+      el.style.background=CH[res.color]||'#888';
+      el.style.borderColor=res.conf>0.7?'rgba(0,214,143,.7)':'rgba(255,184,48,.5)';
+      dbg.appendChild(el);
+
+      // Draw sampling point on canvas
+      const sx=x*scaleX,sy=y*scaleY;
+      ctx.save();
+      ctx.fillStyle=`rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+      ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=res.conf>0.7?'rgba(0,214,143,.9)':'rgba(255,255,255,.5)';
+      ctx.lineWidth=1.5;ctx.stroke();
+      ctx.restore();
+    });
+
+    // Draw adaptive grid lines if detected
+    if(grid.adaptive){
+      ctx.save();ctx.strokeStyle='rgba(0,214,143,.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      // Draw grid (simplified)
+      for(let i=1;i<3;i++){
+        const gx=(grid.points[i*3].x)*scaleX;
+        ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,canvas.height);ctx.stroke();
+        const gy=(grid.points[i].y)*scaleY;
+        ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(canvas.width,gy);ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+}
+
+function draw3DGuideAR(ctx,canvas){
+  const step=AR_STEPS[arCurStep];
+  if(!step)return;
+  const cx=canvas.width/2,cy=canvas.height*.36,sz=Math.min(canvas.width*.5,185);
+  draw3DCubeAR(ctx,cx,cy,sz,step.a);
+}
+
+function draw3DCubeAR(ctx,cx,cy,sz,algo){
+  const firstMove=algo?algo.split(' ')[0]:null;
+  const tilt=0.5,h=sz*.85;
+  const top=[{x:cx,y:cy-h/2},{x:cx+sz/2,y:cy-h/2+sz*tilt/2},{x:cx,y:cy-h/2+sz*tilt},{x:cx-sz/2,y:cy-h/2+sz*tilt/2}];
+  const right=[{x:cx+sz/2,y:cy-h/2+sz*tilt/2},{x:cx+sz/2,y:cy+h/2-sz*tilt/2},{x:cx,y:cy+h/2},{x:cx,y:cy-h/2+sz*tilt}];
+  const front=[{x:cx,y:cy-h/2+sz*tilt},{x:cx,y:cy+h/2},{x:cx-sz/2,y:cy+h/2-sz*tilt/2},{x:cx-sz/2,y:cy-h/2+sz*tilt/2}];
+  const pulse=0.65+0.35*Math.sin(arrowPhase);
+  const face=firstMove?firstMove.replace(/['\d]/g,''):null;
+  drawIsoFace(ctx,top,'rgba(55,55,55,.85)',face==='U'?pulse:0);
+  drawIsoFace(ctx,right,'rgba(38,38,38,.85)',face==='R'?pulse:0);
+  drawIsoFace(ctx,front,'rgba(46,46,46,.85)',(face==='F'||face==='L')?pulse:0);
+  if(face){
+    let ax=cx,ay=cy,ar=sz*.27;
+    if(face==='U'){ay=cy-h/2+sz*tilt/2;ar=sz*.24;}
+    else if(face==='R'){ax=cx+sz*.35;ar=sz*.21;}
+    else{ax=cx-sz*.18;ar=sz*.21;}
+    const dir=algo&&algo.split(' ')[0].includes("'")?-1:1;
+    drawRotArc(ctx,ax,ay,ar,dir);
+    // Label
+    ctx.save();ctx.font='bold 16px DM Mono,monospace';
+    ctx.fillStyle=`rgba(0,214,143,${0.8+0.2*Math.sin(arrowPhase)})`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=8;
+    ctx.fillText(algo?algo.split(' ')[0]:'',cx,cy+sz*.68);
+    ctx.restore();
+  }
+}
+
+function drawIsoFace(ctx,pts,baseColor,glow){
+  ctx.save();ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.closePath();
+  ctx.fillStyle=glow>0?`rgba(0,214,143,${glow*0.65})`:baseColor;ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=1.5;ctx.stroke();
+  if(pts.length===4){
+    ctx.strokeStyle=glow>0?'rgba(0,0,0,.25)':'rgba(255,255,255,.1)';ctx.lineWidth=0.8;
+    for(let i=1;i<3;i++){const t=i/3;ctx.beginPath();ctx.moveTo(pts[0].x+(pts[1].x-pts[0].x)*t,pts[0].y+(pts[1].y-pts[0].y)*t);ctx.lineTo(pts[3].x+(pts[2].x-pts[3].x)*t,pts[3].y+(pts[2].y-pts[3].y)*t);ctx.stroke();ctx.beginPath();ctx.moveTo(pts[0].x+(pts[3].x-pts[0].x)*t,pts[0].y+(pts[3].y-pts[0].y)*t);ctx.lineTo(pts[1].x+(pts[2].x-pts[1].x)*t,pts[1].y+(pts[2].y-pts[1].y)*t);ctx.stroke();}
+  }
+  ctx.restore();
+}
+
+function drawRotArc(ctx,cx,cy,r,dir){
+  const b=3*Math.sin(arrowPhase),pulse=0.8+0.2*Math.sin(arrowPhase*1.5);
+  ctx.save();ctx.strokeStyle=`rgba(0,214,143,${pulse})`;ctx.fillStyle=`rgba(0,214,143,${pulse})`;
+  ctx.lineWidth=3.5;ctx.lineCap='round';ctx.shadowColor='rgba(0,214,143,.85)';ctx.shadowBlur=16;
+  const sa=dir>0?-0.1*Math.PI:0.6*Math.PI,ea=dir>0?0.7*Math.PI:-0.2*Math.PI;
+  ctx.beginPath();ctx.arc(cx+b*.3,cy+b*.3,r,sa,ea,dir<0);ctx.stroke();
+  const ha=dir>0?ea:sa,tx=cx+b*.3+r*Math.cos(ha),ty=cy+b*.3+r*Math.sin(ha);
+  const ta=ha+(dir>0?Math.PI/2:-Math.PI/2),hs=10;
+  ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-hs*Math.cos(ta-0.6),ty-hs*Math.sin(ta-0.6));ctx.moveTo(tx,ty);ctx.lineTo(tx-hs*Math.cos(ta+0.6),ty-hs*Math.sin(ta+0.6));ctx.stroke();ctx.restore();
+}
+
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+
+// AR Capture
+function arCapture(){
+  const v=document.getElementById('ar-video');
+  const c=document.createElement('canvas');
+  c.width=v.videoWidth||640;c.height=v.videoHeight||480;
+  const ctx=c.getContext('2d');ctx.drawImage(v,0,0);
+  const result=scanFramePrecision(ctx,c.width,c.height,FK[arCurFace],calibration);
+  arScanned[FK[arCurFace]]=result.colors;
+  arPrecision[FK[arCurFace]]={confidences:result.confidences,avgConf:result.avgConf,adaptive:result.adaptive};
+
+  // Update confidence UI
+  const conf=result.avgConf;
+  document.getElementById('conf-fill').style.width=(conf*100)+'%';
+  document.getElementById('conf-fill').style.background=conf>0.75?'var(--g)':conf>0.5?'var(--amber)':'var(--red)';
+  document.getElementById('conf-label').textContent=`${FL[arCurFace]}: ${Math.round(conf*100)}%${result.adaptive?' (グリッド検出済み)':''}`;
+
+  showToast(`${FL[arCurFace]} ✓ 確信度 ${Math.round(conf*100)}%${result.adaptive?' (自動グリッド)':''}`);
+  renderArFtabs();
+
+  const done=FK.filter(k=>arScanned[k]).length;
+  if(done>=6){
+    document.getElementById('ar-guide-btn').style.display='block';
+  } else {
+    const next=FK.findIndex((k,i)=>i>arCurFace&&!arScanned[k]);
+    arCurFace=next>=0?next:(FK.findIndex(k=>!arScanned[k])||0);
+    if(arCurFace<0)arCurFace=0;
+    renderArFtabs();
+  }
+}
+
+function renderArFtabs(){
+  document.getElementById('ar-ftabs').innerHTML=FL.map((f,i)=>{
+    const done=arScanned[FK[i]];
+    const conf=arPrecision[FK[i]]?.avgConf||0;
+    const confDot=done?`<span style="font-size:8px;margin-left:3px;">${Math.round(conf*100)}%</span>`:'';
+    return `<div class="ar-ft${i===arCurFace?' on':''}${done?' done':''}" onclick="arSelFace(${i})">${f}${confDot}</div>`;
+  }).join('');
+}
+function arSelFace(i){arCurFace=i;renderArFtabs();}
+
+// AR guide mode (simplified step guide)
+function arStartSolver(){
+  FK.forEach(k=>{if(arScanned[k])faces[k]=[...arScanned[k]];});
+  // Close AR, launch solver
+  stopStream();
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  document.getElementById('ar-screen').classList.remove('on');
+  renderFaceTabs();renderFaceGrid();renderAllMini();checkStartable();
+  showPrecisionPanel();
+  startSolverFromFaces();
+}
+
+function arSpeak(){const s=AR_STEPS[arCurStep];if(s?.a)speakMoves(s.a);}
+function arFB(ok){arFbMap[arCurStep]=ok;document.getElementById('ar-fb-ok').className='fb'+(ok?' ok':'');document.getElementById('ar-fb-ng').className='fb'+(!ok?' ng':'');}
+function arPrev(){if(arCurStep>0){arCurStep--;showARStep(arCurStep);}}
+function arNext(){if(arCurStep<AR_STEPS.length-1){arCurStep++;showARStep(arCurStep);}else{closeAR();}}
+
+function showARStep(idx){
+  const s=AR_STEPS[idx];
+  document.getElementById('ar-snum').textContent=`Step ${idx+1}/${AR_STEPS.length}`;
+  document.getElementById('ar-stit').textContent=s.t;
+  document.getElementById('ar-sbody').textContent=s.b;
+  document.getElementById('ar-algob').style.display=s.a?'flex':'none';
+  if(s.a)document.getElementById('ar-algotxt').textContent=s.a;
+  document.getElementById('ar-prev').disabled=idx===0;
+  document.getElementById('ar-next').textContent=idx===AR_STEPS.length-1?'完了':'次のステップ →';
+}
+
+// ================================================================
+// KOCIEMBA SOLVER UI
+// ================================================================
+async function startSolverFromFaces(){
+  const done=FK.filter(k=>faces[k]&&faces[k].every(c=>c)).length;
+  if(done<6){showToast('全6面を入力してください',true);return;}
+  const v=validateCube(faces);
+  if(!v.ok){showToast(v.errors[0],true);return;}
+
+  document.getElementById('solver-overlay').classList.add('on');
+  document.getElementById('sv-badge').className='sv-badge sv-b-calc';
+  document.getElementById('sv-badge-txt').textContent='Kociemba計算中...';
+  document.getElementById('sv-seq-wrap').classList.add('hide');
+  document.getElementById('sv-prog-wrap').classList.add('hide');
+  document.getElementById('sv-step').classList.add('hide');
+  document.getElementById('sv-fb').classList.add('hide');
+  document.getElementById('sv-nav').classList.add('hide');
+  document.getElementById('sv-complete').classList.add('hide');
+
+  await new Promise(r=>setTimeout(r,50)); // let UI render
+
+  const result=Kociemba.solve(faces);
+
+  if(!result.ok){
+    document.getElementById('sv-badge').className='sv-badge sv-b-err';
+    document.getElementById('sv-badge-txt').textContent=`エラー: ${result.error}`;
+    return;
+  }
+
+  svMoves=result.moves;svIndex=0;svFbMap={};
+  svSessId=Date.now().toString(36);svStart=Date.now();
+
+  if(svMoves.length===0){showSolverComplete(0);return;}
+
+  document.getElementById('sv-badge').className='sv-badge sv-b-ok';
+  document.getElementById('sv-badge-txt').textContent=`✓ ${svMoves.length}手で解けます`;
+  document.getElementById('sv-total').textContent=svMoves.length;
+
+  renderSvSeq();
+  document.getElementById('sv-seq-wrap').classList.remove('hide');
+  document.getElementById('sv-prog-wrap').classList.remove('hide');
+  document.getElementById('sv-step').classList.remove('hide');
+  document.getElementById('sv-fb').classList.remove('hide');
+  document.getElementById('sv-nav').classList.remove('hide');
+
+  showSvStep(0);
+}
+
+function renderSvSeq(){
+  document.getElementById('sv-seq').innerHTML=svMoves.map((m,i)=>
+    `<div class="smove${i===svIndex?' cur':i<svIndex?' done':''}" onclick="svJump(${i})">${m}</div>`
+  ).join('');
+}
+
+function svJump(i){svIndex=i;showSvStep(i);}
+
+async function showSvStep(idx){
+  if(idx>=svMoves.length){showSolverComplete(Date.now()-svStart);return;}
+  const move=svMoves[idx];
+  document.getElementById('sv-step-num').textContent=`${idx+1}/${svMoves.length}`;
+  document.getElementById('sv-phase').textContent=getPhaseLabel(idx,svMoves.length);
+  document.getElementById('sv-move-big').textContent=move;
+  document.getElementById('sv-move-hint').textContent=MOVE_HINTS[move]||move;
+  document.getElementById('sv-prev').disabled=idx===0;
+  document.getElementById('sfb-ok').className='sfb'+(svFbMap[idx]===true?' ok':'');
+  document.getElementById('sfb-ng').className='sfb'+(svFbMap[idx]===false?' ng':'');
+
+  const pct=Math.round((idx/svMoves.length)*100);
+  document.getElementById('sv-prog').style.width=pct+'%';
+
+  // AI explanation every 3 steps
+  document.getElementById('sv-ai-txt').textContent='';
+  if(apiKey&&idx%3===0){
+    document.getElementById('sv-ai-ld').classList.remove('hide');
+    try{
+      const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+        body:JSON.stringify({model:'llama3-8b-8192',max_tokens:60,temperature:.5,
+          messages:[{role:'system',content:'ルービックキューブ指導AI。子ども向け・30字以内・絵文字あり。'},{role:'user',content:`手順${idx+1}: ${move}（${MOVE_HINTS[move]}）を一言で`}]})
+      });
+      const d=await r.json();
+      document.getElementById('sv-ai-txt').textContent=d.choices?.[0]?.message?.content||'';
+    }catch(e){}
+    document.getElementById('sv-ai-ld').classList.add('hide');
+  }
+  renderSvSeq();
+}
+
+function svNext(){svIndex++;if(svIndex>=svMoves.length)showSolverComplete(Date.now()-svStart);else showSvStep(svIndex);}
+function svPrev(){if(svIndex>0){svIndex--;showSvStep(svIndex);}}
+function svFB(ok){svFbMap[svIndex]=ok;document.getElementById('sfb-ok').className='sfb'+(ok?' ok':'');document.getElementById('sfb-ng').className='sfb'+(ok?'':' ng');}
+function svSpeak(){if(svMoves[svIndex])speakMoves(svMoves[svIndex]);}
+
+async function showSolverComplete(ms){
+  document.getElementById('sv-step').classList.add('hide');
+  document.getElementById('sv-fb').classList.add('hide');
+  document.getElementById('sv-nav').classList.add('hide');
+  document.getElementById('sv-prog').style.width='100%';
+  document.getElementById('sv-complete').classList.remove('hide');
+
+  const dur=Math.round(ms/1000);
+  const ok=Object.values(svFbMap).filter(v=>v).length;
+  const ng=Object.values(svFbMap).filter(v=>!v).length;
+  document.getElementById('sc-title').textContent='完成！';
+  document.getElementById('sc-sub').textContent=`${dur}秒・${svMoves.length}手で解けました！`;
+  document.getElementById('sc-stats').innerHTML=`
+    <div class="sc-box"><div class="sc-num">${svMoves.length}</div><div class="sc-lbl">手数</div></div>
+    <div class="sc-box"><div class="sc-num">${dur}s</div><div class="sc-lbl">時間</div></div>
+    <div class="sc-box"><div class="sc-num">👍${ok}</div><div class="sc-lbl">理解OK</div></div>
+  `;
+
+  const rec={h:hashFaces(faces),fd:{...faces},lv:level,s:true,ts:svMoves.length,fb:{...svFbMap},dur,ts2:new Date().toISOString(),sid:svSessId,mode:'kociemba-v9'};
+  try{await dbSave(rec);await syncSupa(rec);}catch(e){}
+  refreshLearn();
+}
+
+function closeSolver(){document.getElementById('solver-overlay').classList.remove('on');}
+
+// ================================================================
+// PRECISION PANEL
+// ================================================================
+function showPrecisionPanel(){
+  if(!Object.keys(arPrecision).length)return;
+  const panel=document.getElementById('prec-panel');
+  panel.style.display='block';
+  const rows=document.getElementById('prec-rows');
+  let totalConf=0,n=0;
+  rows.innerHTML=FK.map((k,i)=>{
+    const p=arPrecision[k];if(!p)return'';
+    totalConf+=p.avgConf;n++;
+    const pct=Math.round(p.avgConf*100);
+    const color=pct>75?'var(--g)':pct>50?'var(--amber)':'var(--red)';
+    return `<div class="prec-row">
+      <div class="prec-label">${FL[i]}</div>
+      <div class="prec-bar-bg"><div class="prec-bar-fg" style="width:${pct}%;background:${color};"></div></div>
+      <div class="prec-val" style="color:${color};">${pct}%${p.adaptive?' ✓':''}</div>
+    </div>`;
+  }).join('');
+  const overall=n>0?Math.round(totalConf/n*100):0;
+  document.getElementById('overall-conf').textContent=`${overall}%`;
+  document.getElementById('overall-conf').style.color=overall>75?'var(--g)':overall>50?'var(--amber)':'var(--red)';
+}
+
+// ================================================================
+// FACE INPUT
+// ================================================================
+function renderFaceTabs(){document.getElementById('ftabs').innerHTML=FL.map((f,i)=>{const done=faces[FK[i]]&&faces[FK[i]].every(c=>c);return `<div class="ft${i===curFace?' on':''}${done?' done':''}" onclick="selFace(${i})">${f}</div>`;}).join('');document.getElementById('face-lbl').textContent=FL[curFace]+' を入力';}
+function selFace(i){curFace=i;editCell=-1;renderFaceTabs();renderFaceGrid();}
+function renderFaceGrid(){const face=faces[FK[curFace]]||Array(9).fill('');document.getElementById('fgrid').innerHTML=face.map((c,i)=>{const bg=c?CH[c]:'rgba(255,255,255,0.05)';return `<div class="fc${editCell===i?' ed':''}" style="background:${bg};border-color:${editCell===i?'#fff':'rgba(255,255,255,0.1)'};" onclick="tapCell(${i})"></div>`;}).join('');}
+function tapCell(i){editCell=i;if(!faces[FK[curFace]])faces[FK[curFace]]=Array(9).fill('');faces[FK[curFace]][i]=selColor;renderFaceGrid();renderFaceTabs();renderAllMini();checkStartable();}
+function renderSwatches(){document.getElementById('swrow').innerHTML=Object.entries(CH).map(([k,v])=>`<div class="sw${k===selColor?' sel':''}" style="background:${v};border:3px solid ${k===selColor?'#fff':'transparent'};${k==='W'?'border-color:#555;':''};cursor:pointer;" onclick="pickColor('${k}')"></div>`).join('');}
+function pickColor(c){selColor=c;renderSwatches();}
+function renderAllMini(){document.getElementById('all-mini').innerHTML=FK.map((k,i)=>{const face=faces[k]||Array(9).fill('');const done=face.every(c=>c);const cells=face.map(c=>`<div style="aspect-ratio:1;border-radius:2px;background:${c?CH[c]:'#1c1c1c'};"></div>`).join('');return `<div><div style="font-size:10px;color:${done?'var(--g)':'var(--t3)'};margin-bottom:3px;font-family:'DM Mono',monospace;">${FL[i]}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;">${cells}</div></div>`;}).join('');}
+function checkStartable(){document.getElementById('btn-go').disabled=FK.filter(k=>faces[k]&&faces[k].every(c=>c)).length<6;}
+function fillDemo(){faces={top:['W','W','W','W','W','W','W','W','W'],front:['R','G','R','R','R','Y','R','R','R'],right:['B','B','W','B','B','B','B','B','O'],left:['G','G','G','G','G','G','Y','G','G'],back:['O','O','O','O','O','O','O','B','O'],bottom:['Y','Y','Y','Y','Y','Y','Y','W','Y']};renderFaceTabs();renderFaceGrid();renderAllMini();checkStartable();showToast('Demo loaded');}
+function resetAll(){faces={};editCell=-1;curFace=0;document.getElementById('prec-panel').style.display='none';renderFaceTabs();renderFaceGrid();renderAllMini();checkStartable();}
+
+// ================================================================
+// LEARN
+// ================================================================
+async function refreshLearn(){
+  const all=await dbAll();
+  const total=all.length,solved=all.filter(p=>p.s).length;
+  const avg=solved>0?Math.round(all.filter(p=>p.s).reduce((s,p)=>s+(p.ts||0),0)/solved):0;
+  const pct=Math.min(100,Math.round(total/100));
+  document.getElementById('st-total').textContent=total;
+  document.getElementById('st-solved').textContent=solved;
+  document.getElementById('st-avg').textContent=avg?avg+'手':'—';
+  document.getElementById('st-pct').textContent=pct+'%';
+  document.getElementById('pbar').style.width=pct+'%';
+  renderHeatmap(all);renderPList(all.slice(-20).reverse());
+}
+function renderHeatmap(all){
+  const hm=document.getElementById('hmap');const n=10;const cnt=Array(n).fill(0),fail=Array(n).fill(0);
+  all.forEach(p=>{if(p.fb)Object.entries(p.fb).forEach(([k,v])=>{const i=+k;if(i<n){cnt[i]++;if(!v)fail[i]++;}});});
+  hm.innerHTML=Array(n).fill(0).map((_,i)=>{const rate=cnt[i]>0?fail[i]/cnt[i]:0;const bg=rate>.6?'#FF4757':rate>.3?'#FFB830':rate>0?'#00D68F':'#272727';const op=cnt[i]>0?.3+rate*.7:.2;return `<div style="aspect-ratio:1;border-radius:3px;background:${bg};opacity:${op};display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--t3);font-family:'DM Mono',monospace;">${i+1}</div>`;}).join('');
+}
+function renderPList(all){
+  const el=document.getElementById('plist');
+  if(!all.length){el.innerHTML='<div style="text-align:center;padding:18px;color:var(--t3);font-size:12px;">データなし</div>';return;}
+  el.innerHTML=all.map(p=>{const face=p.fd?.top||Array(9).fill('W');const cells=face.map(c=>`<div style="aspect-ratio:1;border-radius:2px;background:${CH[c]||'#333'};"></div>`).join('');const ok=p.fb?Object.values(p.fb).filter(v=>v).length:0;return `<div class="pitem"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;width:32px;flex-shrink:0;">${cells}</div><div style="flex:1;min-width:0;"><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--t3);margin-bottom:2px;">${p.sid||'—'}</div><div style="font-size:11px;color:var(--t2);">Lv.${p.lv||0} | ${p.ts||0}手 | ${p.dur||0}s | 👍${ok}</div></div><span style="font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:10px;flex-shrink:0;" class="${p.s?'pbG':'pbR'}">${p.s?'✓':'✗'}</span></div>`;}).join('');
+}
+async function exportData(){const all=await dbAll();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({v:9,ts:new Date().toISOString(),n:all.length,data:all},null,2)],{type:'application/json'}));a.download=`cubby_v9_${Date.now()}.json`;a.click();showToast(`${all.length}件エクスポート`);}
+async function clearData(){if(!confirm('全データを削除しますか？'))return;await dbClear();refreshLearn();showToast('削除しました');}
+
+// ================================================================
+// SUPABASE + SETTINGS
+// ================================================================
+async function syncSupa(rec){if(!sbUrl||!sbKey)return;try{await fetch(`${sbUrl}/rest/v1/cubby_patterns`,{method:'POST',headers:{'Content-Type':'application/json','apikey':sbKey,'Authorization':`Bearer ${sbKey}`,'Prefer':'return=minimal'},body:JSON.stringify({state_hash:rec.h,faces_data:JSON.stringify(rec.fd),level:rec.lv,solved:rec.s,moves:rec.ts,feedback:JSON.stringify(rec.fb),dur:rec.dur,mode:rec.mode,ts:rec.ts2})});}catch(e){}}
+function saveKey(){const v=document.getElementById('api-inp').value.trim();if(v){apiKey=v;localStorage.setItem('cubby_key',v);document.getElementById('api-inp').classList.add('ok');showToast('API key saved ✓');}}
+function saveSupabase(){sbUrl=document.getElementById('sb-url').value.trim().replace(/\/$/,'');sbKey=document.getElementById('sb-key').value.trim();if(sbUrl)localStorage.setItem('cubby_sb_url',sbUrl);if(sbKey)localStorage.setItem('cubby_sb_key',sbKey);showToast('Supabase saved');}
+
+// ================================================================
+// LEVEL
+// ================================================================
+function openLvModal(){document.getElementById('lv-cards').innerHTML=['Beginner','Intermediate','Advanced'].map((n,i)=>`<div style="background:var(--s2);border:1px solid ${i===level?'var(--g)':'var(--b1)'};border-radius:var(--rsm);padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:7px;" onclick="pickLv(${i})"><div style="font-size:21px;">${['🐣','🧩','⚡'][i]}</div><div style="font-size:13px;font-weight:500;">${n}</div>${i===level?'<span class="gbadge" style="margin-left:auto;">現在</span>':''}</div>`).join('');document.getElementById('lv-modal').classList.remove('hide');}
+function closeLvModal(){document.getElementById('lv-modal').classList.add('hide');}
+function pickLv(l){level=l;localStorage.setItem('cubby_level',l);document.getElementById('lbadge').textContent=(['Beginner','Intermediate','Advanced'])[l];closeLvModal();}
+
+// ================================================================
+// TABS
+// ================================================================
+function switchTab(tab){
+  ['solve','learn','settings'].forEach(t=>{document.getElementById('s-'+t).classList.toggle('on',t===tab);document.getElementById('nb-'+t).classList.toggle('on',t===tab);});
+  const ts=document.getElementById('s-timer'),tn=document.getElementById('nb-timer');
+  ts.classList.toggle('on',tab==='timer');tn.classList.toggle('on',tab==='timer');
+  if(tab==='learn')refreshLearn();if(tab==='timer')renderRecords();
+  if(tab==='settings'){if(apiKey){document.getElementById('api-inp').value=apiKey;document.getElementById('api-inp').classList.add('ok');}if(sbUrl)document.getElementById('sb-url').value=sbUrl;if(sbKey)document.getElementById('sb-key').value=sbKey;}
+}
+
+// ================================================================
+// TIMER
+// ================================================================
+function timerAction(){if(timerState==='idle'||timerState==='stopped')startInsp();else if(timerState==='running')stopTimer();}
+function startInsp(){timerState='inspection';inspSeconds=15;const btn=document.getElementById('t-btn');btn.textContent='タップでスタート';btn.style.background='var(--amber)';btn.style.color='#000';document.getElementById('insp-overlay').classList.remove('hide');document.getElementById('insp-num').textContent=15;document.getElementById('insp-num').className='insp-num';inspInterval=setInterval(()=>{inspSeconds--;const el=document.getElementById('insp-num');el.textContent=inspSeconds;el.className='insp-num'+(inspSeconds<=5?' danger':inspSeconds<=8?' warn':'');if(inspSeconds<=0){clearInterval(inspInterval);startTimer();}},1000);}
+function inspTap(){if(timerState==='inspection'){clearInterval(inspInterval);document.getElementById('insp-overlay').classList.add('hide');startTimer();}}
+function startTimer(){timerState='running';timerStart=performance.now();document.getElementById('insp-overlay').classList.add('hide');document.getElementById('timer-status').textContent='計測中...';const btn=document.getElementById('t-btn');btn.textContent='ストップ';btn.style.background='var(--red)';btn.style.color='#fff';document.getElementById('timer-display').className='timer-display running';timerRaf=requestAnimationFrame(updateTimer);}
+function stopTimer(){if(timerState!=='running')return;timerState='stopped';timerElapsed=performance.now()-timerStart;cancelAnimationFrame(timerRaf);document.getElementById('timer-display').className='timer-display stopped';document.getElementById('timer-status').textContent='完了！';const btn=document.getElementById('t-btn');btn.textContent='もう一度';btn.style.background='var(--g)';btn.style.color='#000';saveRecord(timerElapsed);}
+function updateTimer(){if(timerState!=='running')return;const ms=performance.now()-timerStart;document.getElementById('t-min').textContent=Math.floor(ms/60000);document.getElementById('t-sec').textContent=String(Math.floor(ms/1000)%60).padStart(2,'0');document.getElementById('t-ms').textContent=String(Math.floor(ms%1000)).padStart(3,'0');timerRaf=requestAnimationFrame(updateTimer);}
+function timerReset(){if(timerState==='running')cancelAnimationFrame(timerRaf);clearInterval(inspInterval);timerState='idle';document.getElementById('timer-display').className='timer-display';document.getElementById('timer-status').textContent='準備完了';const btn=document.getElementById('t-btn');btn.textContent='スタート';btn.style.background='var(--g)';btn.style.color='#000';document.getElementById('insp-overlay').classList.add('hide');document.getElementById('t-min').textContent='0';document.getElementById('t-sec').textContent='00';document.getElementById('t-ms').textContent='000';}
+function fmt(ms){const s=ms/1000,m=Math.floor(s/60),sc=(s%60).toFixed(3);return m>0?`${m}:${sc.padStart(6,'0')}`:`${sc}`;}
+function saveRecord(ms){const r={ms,t:fmt(ms),d:new Date().toLocaleDateString()};timerRecords.unshift(r);if(timerRecords.length>50)timerRecords=timerRecords.slice(0,50);localStorage.setItem('cubby_records',JSON.stringify(timerRecords));renderRecords();const pb=Math.min(...timerRecords.map(r=>r.ms));document.getElementById('pb-banner').style.display='block';document.getElementById('pb-time').textContent=fmt(pb)+'s';if(ms<=pb+1)showToast('🏆 自己ベスト！');else showToast(`${fmt(ms)}s`);}
+function renderRecords(){const el=document.getElementById('record-list');if(!timerRecords.length){el.innerHTML='<div style="text-align:center;padding:14px;color:var(--t3);font-size:12px;">まだ記録がありません</div>';return;}const pb=Math.min(...timerRecords.map(r=>r.ms));el.innerHTML=timerRecords.slice(0,10).map((r,i)=>{const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';return `<div class="rrow"><div class="rrank ${rc}">${i+1}</div><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;">${r.t}s ${r.ms===pb?'🏆':''}</div><div style="font-size:10px;color:var(--t2);">${r.d}</div></div><button style="background:transparent;border:none;color:var(--t3);cursor:pointer;" onclick="delRecord(${i})">×</button></div>`;}).join('');document.getElementById('pb-banner').style.display='block';document.getElementById('pb-time').textContent=fmt(pb)+'s';}
+function delRecord(i){timerRecords.splice(i,1);localStorage.setItem('cubby_records',JSON.stringify(timerRecords));renderRecords();}
+const MOVES_S=['R','L','U','D','F','B'],MODS_S=["","'","2"];
+function genScramble(){let s=[],l='',l2='';while(s.length<20){const m=MOVES_S[Math.floor(Math.random()*6)];if(m===l||m===l2)continue;s.push(m+MODS_S[Math.floor(Math.random()*3)]);l2=l;l=m;}document.getElementById('scramble-txt').textContent=s.join(' ');}
+
+// ================================================================
+// SPEECH
+// ================================================================
+function speakMoves(algo){
+  if(!('speechSynthesis' in window))return;
+  const nm={R:'アール',U:'ユー',F:'エフ',L:'エル',D:'ディー',B:'ビー'};
+  const sp=algo.split(' ').map(m=>(nm[m.replace(/['\d]/g,'')]||m)+(m.includes("'")?'ダッシュ':'')+(m.includes('2')?' ニカイ':'')).join('、');
+  const u=new SpeechSynthesisUtterance(sp);u.lang='ja-JP';u.rate=.82;
+  window.speechSynthesis.cancel();window.speechSynthesis.speak(u);
+}
+
+// ================================================================
+// UTILS
+// ================================================================
+function hashFaces(f){return FK.map(k=>(f[k]||[]).join('')).join('|');}
+let toastT=null;
+function showToast(msg,isErr=false){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(isErr?' err':'')+' show';clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),isErr?3500:2400);}
+
+// ================================================================
+// INIT
+// ================================================================
+window.addEventListener('DOMContentLoaded',async()=>{
+  await openDB();
+  document.getElementById('lbadge').textContent=(['Beginner','Intermediate','Advanced'])[level];
+  renderFaceTabs();renderFaceGrid();renderSwatches();renderAllMini();
+  genScramble();renderRecords();
+  if(apiKey){document.getElementById('api-inp').value=apiKey;document.getElementById('api-inp').classList.add('ok');}
+});
+</script>
+</body>
+</html>
